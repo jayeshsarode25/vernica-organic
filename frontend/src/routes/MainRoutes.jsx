@@ -1,0 +1,32 @@
+import { Route, Routes } from "react-router-dom";
+import Home from "../pages/Home";
+import Products from "../pages/Products";
+import Login from "../pages/Login";
+import SignUp from "../pages/SignUp";
+import PageNotFound from "../pages/PageNotFound";
+import BlogPage from "../pages/BlogPage";
+import Cart from "../pages/Cart";
+import UserProfile from "../pages/user/UserProfile";
+import ContactUs from "../pages/Contactus";
+import AboutUs from "../pages/AboutUs";
+
+const MainRoutes = () => {
+  return (
+    <div>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/sign-up" element={<SignUp />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/contact-us" element={<ContactUs />} />
+        <Route path="/product" element={<Products />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/user-profile" element={<UserProfile />} />
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </div>
+  );
+};
+
+export default MainRoutes;
