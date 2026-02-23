@@ -6,8 +6,6 @@ import genrateOtp from "../utility/genrateOtp.js";
 import { redis } from "../db/redis.js";
 import { publishToQueue } from "../broker/rabbit.js";
 
-
-
 export async function signUpWithPhone(req, res) {
   try {
     const { phone, name, email } = req.body;
@@ -193,17 +191,39 @@ export async function signUpWithEmail(req, res) {
 
 export async function loginWithPhone(req, res) {
   try {
-    const { phone } = req.body;
+    let { phone } = req.body;
 
-    if (!phone) {
+    if (phone === undefined || phone === null) {
       return res.status(400).json({
         message: "Phone number is required to login",
       });
     }
 
-    const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
+    // Force string safely
+    phone = String(phone).trim();
 
-    const user = await userModel.findOne({ phone: formattedPhone });
+    // Remove spaces, dashes, brackets
+    phone = phone.replace(/[^\d+]/g, "");
+
+    // Validate numeric phone
+    if (!/^\+?\d{10,15}$/.test(phone)) {
+      return res.status(400).json({
+        message: "Invalid phone number format",
+      });
+    }
+
+    // Normalize to +91 format
+    const formattedPhone = phone.startsWith("+")
+      ? phone
+      : `+91${phone.slice(-10)}`;
+
+    console.log("Searching phone:", formattedPhone);
+
+    // Flexible DB search (handles bad stored data)
+    const user = await userModel.findOne({
+      phone: { $regex: formattedPhone.slice(-10) + "$" },
+      isActive: true,
+    });
 
     if (!user) {
       return res.status(404).json({
@@ -235,8 +255,11 @@ export async function loginWithPhone(req, res) {
       message: "Login OTP sent successfully",
     });
   } catch (error) {
+    console.error("LOGIN PHONE ERROR:", error);
+
     return res.status(500).json({
       message: "Failed to login with phone. Please try again.",
+      error: error.message,
     });
   }
 }
@@ -274,7 +297,6 @@ export async function loginVerifyOtp(req, res) {
         message: "Invalid or expired OTP",
       });
     }
-
 
     user.phoneOTP = undefined;
     user.phoneOTPExpiry = undefined;
@@ -512,42 +534,33 @@ export const getUser = async (req, res) => {
       page: pageNum,
       totalPages: Math.ceil(total / limitNum),
     });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 export const getUserById = async (req, res) => {
-  
   try {
-    const user = await userModel
-      .findById(req.params.id)
-      .select("-password");
+    const user = await userModel.findById(req.params.id).select("-password");
 
-    if (!user)
-      return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     res.json(user);
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-
 export const deleteUser = async (req, res) => {
   try {
     const user = await userModel.findByIdAndDelete(req.params.id);
 
-    if (!user)
-      return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     res.json({
       success: true,
       message: "User deleted successfully",
     });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -557,8 +570,7 @@ export const blockUser = async (req, res) => {
   try {
     const user = await userModel.findById(req.params.id);
 
-    if (!user)
-      return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     user.isBlocked = !user.isBlocked;
     await user.save();
@@ -568,7 +580,6 @@ export const blockUser = async (req, res) => {
       message: `User ${user.isBlocked ? "blocked" : "unblocked"}`,
       user,
     });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -585,7 +596,7 @@ export const getUserAddresses = async (req, res) => {
     message: "Addresses fetched successfully",
     addresses: user.addresses,
   });
-}
+};
 
 export const addUserAddress = async (req, res) => {
   const id = req.user.id;
@@ -606,7 +617,7 @@ export const addUserAddress = async (req, res) => {
         },
       },
     },
-    { new: true }
+    { new: true },
   );
 
   if (!user) return res.status(404).json({ message: "User not found" });
@@ -615,13 +626,16 @@ export const addUserAddress = async (req, res) => {
     message: "Address added successfully",
     address: user.addresses[user.addresses.length - 1],
   });
-}
+};
 
 export const deleteUserAddress = async (req, res) => {
   const id = req.user.id;
   const { addressId } = req.params;
 
-  const isAddresesExists = await userModel.findOne({ _id: id, "addresses._id": addressId });
+  const isAddresesExists = await userModel.findOne({
+    _id: id,
+    "addresses._id": addressId,
+  });
 
   if (!isAddresesExists) {
     return res.status(404).json({ message: "Address not found" });
@@ -630,20 +644,22 @@ export const deleteUserAddress = async (req, res) => {
   const user = await userModel.findOneAndUpdate(
     { _id: id },
     { $pull: { addresses: { _id: addressId } } },
-    { new: true }
+    { new: true },
   );
 
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
 
-  const addressExists = user.addresses.some(addr => addr._id.toString() === addressId);
+  const addressExists = user.addresses.some(
+    (addr) => addr._id.toString() === addressId,
+  );
   if (addressExists) {
     return res.status(404).json({ message: "Address not found" });
   }
 
-  return res.status(200).json({ 
+  return res.status(200).json({
     message: "Address deleted successfully",
-    addresses: user.addresses
-   });
-}
+    addresses: user.addresses,
+  });
+};

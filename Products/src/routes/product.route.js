@@ -12,8 +12,8 @@ router.post(
   "/",
   createAuthMiddleware(["admin"]),
   upload.fields([
-    { name: "images", maxCount: 2 },
-    { name: "video", maxCount: 1 },
+    { name: "imagesUrls", maxCount: 2 }, 
+    { name: "videoUrl", maxCount: 1 },     
   ]),
   createProductValidators,
   productCrontroller.createProduct
@@ -27,7 +27,7 @@ router.delete('/:id', createAuthMiddleware(["admin"]), productCrontroller.delete
 
 router.get('/', productCrontroller.getProduct);
 
-router.get('/count', productCrontroller.getProductCount);
+router.get('/count',createAuthMiddleware(["admin"]), productCrontroller.getProductCount);
 
 router.get('/:id', productCrontroller.getProductById);
 

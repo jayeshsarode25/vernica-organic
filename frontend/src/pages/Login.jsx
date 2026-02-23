@@ -1,8 +1,13 @@
-import React from "react";
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { sendLoginOtp, verifyLoginOtp } from "../redux/reducer/userSlice";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
+  
+  const dispatch = useDispatch();
+
+  const { step, loading } = useSelector((state) => state.auth);
 
   const navigate = useNavigate();
 
@@ -15,54 +20,34 @@ const Login = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const sendOtp = async () => {
-    setLoading(true);
-
-    try {
-      await axios.post(
-        "http://localhost:3000/api/auth/login-phone",
-        {
-          phone: form.phone,
-        },
-        {
-          withCredentials: true,
-        },
+  const sendOtp = () => {
+      console.log("clicled");
+      dispatch(
+        sendLoginOtp(
+         form.phone,
+        ),
       );
-      setStep(2);
-    } catch (error) {
-      console.error("Error Sending Otp", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const verifyOtp = async () => {
-    setLoading(true);
-
-    try {
-      await axios.post(
-        "http://localhost:3000/api/auth/verify-login-otp",
-        {
+      console.log("dispatch fired");
+    };
+  
+    const verifyOtp = async () => {
+      const res = await dispatch(
+        verifyLoginOtp({
           phone: form.phone,
           otp: form.otp,
-        },
-        {
-          withCredentials: true,
-        },
+        })
       );
-      navigate("/");
-    } catch (error) {
-      console.error("Error Verifying Otp", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  
+      if (res.meta.requestStatus === "fulfilled") {
+        navigate("/");
+      }
+    };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white w-96 p-8 rounded-2xl shadow-lg">
         <h1 className="text-2xl font-bold text-center mb-6">
-          {step === 1 ? "Login" : "Verify Otp"}
+          {step === "idle" ? "Login" : "Verify Otp"}
         </h1>
 
         <button className="w-full flex items-center justify-center gap-3 border border-gray-300 py-3 rounded-lg hover:bg-gray-50 transition mb-6">
@@ -96,7 +81,7 @@ const Login = () => {
           <div className="flex-1 h-px bg-gray-300"></div>
         </div>
 
-        {step === 1 && (
+        {step === "idle" && (
           <>
             <input
               name="phone"
@@ -116,7 +101,7 @@ const Login = () => {
           </>
         )}
 
-        {step === 2 && (
+        {step === "loginOtpSent" && (
           <>
             <input
               value={form.phone}
@@ -141,7 +126,7 @@ const Login = () => {
             </button>
 
             <p
-              onClick={() => setStep(1)}
+              onClick={() => dispatch(resetFlow())}
               className="text-center text-sm text-indigo-600 mt-4 cursor-pointer"
             >
               Edit details

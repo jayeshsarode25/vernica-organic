@@ -14,23 +14,23 @@ export const createProduct = async (req, res) => {
     let imageUrls = [];
     console.log(req.files);
 
-    if (req.files?.imageUrls?.length) {
+    if (req.files?.imagesUrls?.length) {
       imageUrls = await Promise.all(
-        req.files.imageUrls.map(async (file) => {
-          const res = await uploadImage({
+        req.files.imagesUrls.map(async (file) => {
+          const uploaded = await uploadImage({
             buffer: file.buffer,
             folder: "products/images",
           });
-          return res.url;
+          return {url:uploaded.url};
         }),
       );
     }
 
     let videoUrl = "";
 
-    if (req.files?.video) {
+    if (req.files?.videoUrl) { 
       const video = await uploadVideo({
-        buffer: req.files.video[0].buffer,
+        buffer: req.files.videoUrl[0].buffer,
         folder: "products/videos",
       });
       videoUrl = video.url;

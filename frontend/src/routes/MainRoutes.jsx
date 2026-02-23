@@ -9,6 +9,7 @@ import Cart from "../pages/Cart";
 import UserProfile from "../pages/user/UserProfile";
 import ContactUs from "../pages/Contactus";
 import AboutUs from "../pages/AboutUs";
+import ProdectDetail from "../components/products/ProdectDetail";
 
 const MainRoutes = () => {
   return (
@@ -24,6 +25,7 @@ const MainRoutes = () => {
         <Route path="/cart" element={<Cart />} />
         <Route path="/user-profile" element={<UserProfile />} />
         <Route path="*" element={<PageNotFound />} />
+        <Route path="/product/:id" element={<ProdectDetail/>}/>
       </Routes>
     </div>
   );
