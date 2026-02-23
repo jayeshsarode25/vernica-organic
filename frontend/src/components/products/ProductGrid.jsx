@@ -7,8 +7,14 @@ import ProductLoader from "./ProductLoader";
 const ProductGrid = () => {
   const dispatch = useDispatch();
 
-  const { list = [], loading, error, pagination = {} } =
-    useSelector((state) => state.products || {});
+  const q = useSelector((state) => state.search.query) || "";
+
+  const {
+    list = [],
+    loading,
+    error,
+    pagination = {},
+  } = useSelector((state) => state.products || {});
 
   const { skip = 0, limit = 10, total = 0 } = pagination;
 
@@ -16,7 +22,10 @@ const ProductGrid = () => {
     dispatch(featchProducts({ skip, limit }));
   }, [dispatch, skip, limit]);
 
- 
+  const filteredProducts = !q?.trim()
+    ? list
+    : list.filter((p) => p?.title?.toLowerCase().includes(q.toLowerCase()));
+
   if (loading)
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -26,31 +35,26 @@ const ProductGrid = () => {
       </div>
     );
 
-  
   if (error)
     return (
       <p className="text-red-500 text-center mt-10 font-medium">{error}</p>
     );
 
-
   if (!list.length)
-    return (
-      <p className="text-center mt-10 text-gray-500">
-        No products found
-      </p>
-    );
+    return <p className="text-center mt-10 text-gray-500">No products found</p>;
 
- 
   return (
     <>
-    
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {list.map((product) => (
-          <ProductCard key={product._id} product={product} />
-        ))}
+        {filteredProducts.length === 0 ? (
+          <p>No products found</p>
+        ) : (
+          filteredProducts.map((product) => (
+            <ProductCard key={product._id} product={product} />
+          ))
+        )}
       </div>
 
-     
       <div className="flex justify-center items-center mt-12 gap-4">
         <button
           onClick={() =>

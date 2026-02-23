@@ -21,19 +21,23 @@ export const createProduct = async (req, res) => {
             buffer: file.buffer,
             folder: "products/images",
           });
-          return {url:uploaded.url};
+          return { url: uploaded.url };
         }),
       );
     }
 
     let videoUrl = "";
 
-    if (req.files?.videoUrl) { 
+    if (req.files?.videoUrl) {
       const video = await uploadVideo({
         buffer: req.files.videoUrl[0].buffer,
         folder: "products/videos",
       });
-      videoUrl = video.url;
+      videoUrl = {
+        url: video.url,
+        thumbnail: video.thumbnail,
+        id: video.id,
+      };
     }
 
     const product = await productModel.create({

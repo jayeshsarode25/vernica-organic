@@ -21,4 +21,4 @@ export const getSingleProductApi = (id) => api.get(`${id}`);
 export const createProductApi = (data) => api.post("/", data);
 export const updateProductApi = (id, data) => api.patch(`${id}`, data);
 export const deleteProductApi = (id) => api.delete(`${id}`);
-export const countProduct = (count) => api.get("/count",count);
+export const countProductApi = () => api.get("/count");

@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { featchProductById } from "../../redux/reducer/productSlice";
 import ProductInfoSection from "./ProductInfoSection";
+import TestimonialSection from "../TestimonialSection";
+import Footer from "../../pages/Footer";
 
 const ProdectDetail = () => {
   const { id } = useParams();
@@ -19,7 +21,6 @@ const ProdectDetail = () => {
   if (loading || !single)
     return <p className="text-center mt-20">Loading...</p>;
 
-  // ✅ combine images + video into one gallery
   const gallery = [
     ...(single.images || []).map((img) => ({
       type: "image",
@@ -42,9 +43,7 @@ const ProdectDetail = () => {
   return (
     <>
       <div className="max-w-7xl mx-auto px-6 py-12 grid md:grid-cols-2 gap-12">
-        {/* LEFT SIDE */}
         <div>
-          {/* MAIN PREVIEW */}
           <div className="bg-gray-100 rounded-2xl p-6 flex justify-center items-center">
             {activeItem?.type === "image" ? (
               <img src={activeItem.url} className="h-[450px] object-contain" />
@@ -57,7 +56,6 @@ const ProdectDetail = () => {
             )}
           </div>
 
-          {/* THUMBNAILS */}
           <div className="flex gap-3 mt-4 flex-wrap">
             {gallery.map((item, i) => (
               <div
@@ -69,7 +67,6 @@ const ProdectDetail = () => {
               >
                 <img src={item.thumb} className="w-20 h-20 object-cover" />
 
-                {/* VIDEO ICON OVERLAY */}
                 {item.type === "video" && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-lg">
                     ▶
@@ -80,7 +77,6 @@ const ProdectDetail = () => {
           </div>
         </div>
 
-        {/* RIGHT SIDE */}
         <div>
           <h1 className="text-4xl font-bold">{single.title}</h1>
 
@@ -88,7 +84,6 @@ const ProdectDetail = () => {
 
           <p className="text-gray-600 mt-6">{single.description}</p>
 
-          {/* QUANTITY */}
           <div className="mt-8">
             <p className="font-medium mb-2">Quantity</p>
 
@@ -99,7 +94,6 @@ const ProdectDetail = () => {
             </div>
           </div>
 
-          {/* BUTTONS */}
           <div className="mt-8 space-y-3">
             <button className="w-full bg-black text-white py-4 rounded-xl font-semibold">
               Add to Cart
@@ -115,8 +109,11 @@ const ProdectDetail = () => {
       </div>
       {/* <div className="max-w-5xl mx-auto grid grid-cols-2 gap-10">...</div> */}
 
-      {/* NEW SECTION */}
       <ProductInfoSection product={single} />
+
+      <TestimonialSection />
+
+      <Footer />
     </>
   );
 };
