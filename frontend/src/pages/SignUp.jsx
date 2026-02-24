@@ -36,16 +36,28 @@ const SignUp = () => {
   };
 
   const verifyOtp = async () => {
-    const res = await dispatch(
-      verifySignupOtp({
-        phone: form.phone,
-        otp: form.otp,
-        password: form.password,
-      }),
-    );
+    try {
+      const data = dispatch(
+        verifySignupOtp({
+          phone: form.phone,
+          otp: form.otp,
+          password: form.password,
+        }),
+      ).unwrap();
 
-    if (res.meta.requestStatus === "fulfilled") {
-      navigate("/");
+      const token = data.token;
+
+      dispatch(setCredentials(token));
+
+      const decoded = jwtDecode(token);
+
+      if (decoded.role === "admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("OTP verification failed:", error);
     }
   };
 

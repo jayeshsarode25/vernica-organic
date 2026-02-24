@@ -10,6 +10,13 @@ import UserProfile from "../components/user/UserProfile";
 import ContactUs from "../pages/Contactus";
 import AboutUs from "../pages/AboutUs";
 import ProdectDetail from "../components/products/ProdectDetail";
+import AdminRoute from "./AdminRoute";
+import AuthRoute from "./AuthRoute";
+import AdminLayout from "../layout/AdminLayout";
+
+import Dashboard from "../pages/admin/Dashboard";
+import AdminProducts from "../pages/admin/AdminProducts";
+import Users from "../pages/admin/Users";
 
 const MainRoutes = () => {
   return (
@@ -22,9 +29,56 @@ const MainRoutes = () => {
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/product" element={<Products />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/user-profile" element={<UserProfile />} />
-        <Route path="/product/:id" element={<ProdectDetail/>}/>
+        <Route path="/product/:id" element={<ProdectDetail />} />
+        <Route
+          path="/cart"
+          element={
+            <AuthRoute>
+              <Cart />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/user-profile"
+          element={
+            <AuthRoute>
+              <UserProfile />
+            </AuthRoute>
+          }
+        />
+
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminRoute>
+              <AdminLayout>
+                <Dashboard />
+              </AdminLayout>
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/products"
+          element={
+            <AdminRoute>
+              <AdminLayout>
+                <AdminProducts />
+              </AdminLayout>
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/users"
+          element={
+            <AdminRoute>
+              <AdminLayout>
+                <Users />
+              </AdminLayout>
+            </AdminRoute>
+          }
+        />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </div>

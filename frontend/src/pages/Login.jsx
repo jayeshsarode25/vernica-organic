@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { sendLoginOtp, verifyLoginOtp } from "../redux/reducer/userSlice";
+import { sendLoginOtp, setCredentials, verifyLoginOtp } from "../redux/reducer/userSlice";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 
 const Login = () => {
-  
   const dispatch = useDispatch();
 
   const { step, loading } = useSelector((state) => state.auth);
@@ -21,27 +21,35 @@ const Login = () => {
   };
 
   const sendOtp = () => {
-      console.log("clicled");
-      dispatch(
-        sendLoginOtp(
-         form.phone,
-        ),
-      );
-      console.log("dispatch fired");
-    };
-  
-    const verifyOtp = async () => {
-      const res = await dispatch(
+    console.log("clicled");
+    dispatch(sendLoginOtp(form.phone));
+    console.log("dispatch fired");
+  };
+
+  const verifyOtp = async () => {
+    try {
+      const data = await dispatch(
         verifyLoginOtp({
           phone: form.phone,
           otp: form.otp,
-        })
-      );
-  
-      if (res.meta.requestStatus === "fulfilled") {
+        }),
+      ).unwrap();
+
+      const token = data.token;
+
+      dispatch(setCredentials(token));
+
+      const decoded = jwtDecode(token);
+
+      if (decoded.role === "admin") {
+        navigate("/admin/dashboard");
+      } else {
         navigate("/");
       }
-    };
+    } catch (error) {
+      console.error("OTP verification failed:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

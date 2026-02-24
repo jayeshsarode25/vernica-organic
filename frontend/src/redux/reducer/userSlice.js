@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
+
 export const sendSignupOtp = createAsyncThunk(
   "api/auth/sendSignupOtp",
   async (data, thunkApi) => {
@@ -28,7 +29,7 @@ export const verifySignupOtp = createAsyncThunk(
           password,
         },
       );
-      return res.data.user;
+      return res.data;
     } catch (error) {
       return thunkApi.rejectWithValue(error.response.data.message);
     }
@@ -41,16 +42,16 @@ export const sendLoginOtp = createAsyncThunk(
     try {
       const res = await axios.post(
         "http://localhost:3000/api/auth/login-phone",
-        { phone } 
+        { phone },
       );
 
       return { phone, message: res.data.message };
     } catch (error) {
       return thunkApi.rejectWithValue(
-        error?.response?.data?.message || "Failed to send OTP"
+        error?.response?.data?.message || "Failed to send OTP",
       );
     }
-  }
+  },
 );
 
 export const verifyLoginOtp = createAsyncThunk(
@@ -61,17 +62,17 @@ export const verifyLoginOtp = createAsyncThunk(
         "http://localhost:3000/api/auth/verify-login-otp",
         {
           phone,
-          otp
-        }
+          otp,
+        },
       );
-
-      return res.data.user;
+      console.log("VERIFY LOGIN RESPONSE:", res.data);  
+      return res.data;
     } catch (error) {
       return thunkApi.rejectWithValue(
-        error?.response?.data?.message || "OTP verification failed"
+        error?.response?.data?.message || "OTP verification failed",
       );
     }
-  }
+  },
 );
 
 const authSlice = createSlice({
@@ -88,6 +89,8 @@ const authSlice = createSlice({
   reducers: {
     logout: (state) => {
       state.user = null;
+      state.token = null;
+      localStorage.removeItem("token");
       state.step = "idle";
     },
     clearError: (state) => {
@@ -108,7 +111,7 @@ const authSlice = createSlice({
       })
       .addCase(sendSignupOtp.fulfilled, (state, action) => {
         state.loading = false;
-        state.step = "signupOtpSent"; 
+        state.step = "signupOtpSent";
         state.tempPhone = action.payload.phone;
         state.tempSignupData = action.payload;
       })
@@ -133,5 +136,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError, resetFlow } = authSlice.actions;
+export const { setCredentials, logout, clearError, resetFlow } =
+  authSlice.actions;
 export default authSlice.reducer;
