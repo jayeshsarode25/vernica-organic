@@ -75,6 +75,21 @@ export const verifyLoginOtp = createAsyncThunk(
   },
 );
 
+export const getMe = createAsyncThunk(
+  "auth/getMe",
+  async (_, thunkApi) => {
+    try {
+      const res = await axios.get(
+        "http://localhost:3000/api/auth/me",
+        { withCredentials: true }
+      );
+      return res.data; 
+    } catch (error) {
+      return thunkApi.rejectWithValue("Not authenticated");
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState: {
@@ -89,8 +104,6 @@ const authSlice = createSlice({
   reducers: {
     logout: (state) => {
       state.user = null;
-      state.token = null;
-      localStorage.removeItem("token");
       state.step = "idle";
     },
     clearError: (state) => {
@@ -132,6 +145,17 @@ const authSlice = createSlice({
       .addCase(verifyLoginOtp.fulfilled, (state, action) => {
         state.user = action.payload;
         state.step = "authenticated";
+      })
+      .addCase(getMe.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getMe.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+      })
+      .addCase(getMe.rejected, (state) => {
+        state.loading = false;
+        state.user = null;
       });
   },
 });

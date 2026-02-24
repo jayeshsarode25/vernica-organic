@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { sendLoginOtp, setCredentials, verifyLoginOtp } from "../redux/reducer/userSlice";
+import {
+  getMe,
+  sendLoginOtp,
+  setCredentials,
+  verifyLoginOtp,
+} from "../redux/reducer/userSlice";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
@@ -21,27 +26,21 @@ const Login = () => {
   };
 
   const sendOtp = () => {
-    console.log("clicled");
     dispatch(sendLoginOtp(form.phone));
-    console.log("dispatch fired");
   };
 
   const verifyOtp = async () => {
     try {
-      const data = await dispatch(
+      await dispatch(
         verifyLoginOtp({
           phone: form.phone,
           otp: form.otp,
         }),
       ).unwrap();
 
-      const token = data.token;
+      const userData = await dispatch(getMe()).unwrap();
 
-      dispatch(setCredentials(token));
-
-      const decoded = jwtDecode(token);
-
-      if (decoded.role === "admin") {
+      if (userData.role === "admin") {
         navigate("/admin/dashboard");
       } else {
         navigate("/");

@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
-import { sendSignupOtp, verifySignupOtp } from "../redux/reducer/userSlice";
+import { getMe, sendSignupOtp, verifySignupOtp } from "../redux/reducer/userSlice";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -37,7 +37,7 @@ const SignUp = () => {
 
   const verifyOtp = async () => {
     try {
-      const data = dispatch(
+      dispatch(
         verifySignupOtp({
           phone: form.phone,
           otp: form.otp,
@@ -45,13 +45,9 @@ const SignUp = () => {
         }),
       ).unwrap();
 
-      const token = data.token;
+      const userData = await dispatch(getMe()).unwrap();
 
-      dispatch(setCredentials(token));
-
-      const decoded = jwtDecode(token);
-
-      if (decoded.role === "admin") {
+      if (userData.role === "admin") {
         navigate("/admin/dashboard");
       } else {
         navigate("/");

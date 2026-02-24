@@ -10,7 +10,6 @@ import UserProfile from "../components/user/UserProfile";
 import ContactUs from "../pages/Contactus";
 import AboutUs from "../pages/AboutUs";
 import ProdectDetail from "../components/products/ProdectDetail";
-import AdminRoute from "./AdminRoute";
 import AuthRoute from "./AuthRoute";
 import AdminLayout from "../layout/AdminLayout";
 
@@ -33,7 +32,7 @@ const MainRoutes = () => {
         <Route
           path="/cart"
           element={
-            <AuthRoute>
+            <AuthRoute role = "user">
               <Cart />
             </AuthRoute>
           }
@@ -41,7 +40,7 @@ const MainRoutes = () => {
         <Route
           path="/user-profile"
           element={
-            <AuthRoute>
+            <AuthRoute role="user">
               <UserProfile />
             </AuthRoute>
           }
@@ -50,33 +49,33 @@ const MainRoutes = () => {
         <Route
           path="/admin/dashboard"
           element={
-            <AdminRoute>
+            <AuthRoute role="admin">
               <AdminLayout>
                 <Dashboard />
               </AdminLayout>
-            </AdminRoute>
+            </AuthRoute>
           }
         />
 
         <Route
           path="/admin/products"
           element={
-            <AdminRoute>
+            <AuthRoute role="admin">
               <AdminLayout>
                 <AdminProducts />
               </AdminLayout>
-            </AdminRoute>
+            </AuthRoute>
           }
         />
 
         <Route
           path="/admin/users"
           element={
-            <AdminRoute>
+            <AuthRoute role="admin">
               <AdminLayout>
                 <Users />
               </AdminLayout>
-            </AdminRoute>
+            </AuthRoute>
           }
         />
         <Route path="*" element={<PageNotFound />} />

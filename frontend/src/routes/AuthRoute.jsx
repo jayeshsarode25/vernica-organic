@@ -2,10 +2,14 @@ import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
 const AuthRoute = ({ children }) => {
-  const { token } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
 
-  if (!token) {
-    return <Navigate to="/login" replace />;
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  if (role && user.role !== role) {
+    return <Navigate to="/" />;
   }
 
   return children;
