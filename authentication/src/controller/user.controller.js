@@ -312,7 +312,8 @@ export async function loginVerifyOtp(req, res) {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
+      secure: false,
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -323,6 +324,7 @@ export async function loginVerifyOtp(req, res) {
         phone: user.phone,
         email: user.email,
         name: user.name,
+        role: user.role,
         isPhoneVerified: user.isPhoneVerified,
         lastLogin: user.lastLogin,
       },

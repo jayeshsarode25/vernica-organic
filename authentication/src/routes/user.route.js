@@ -1,6 +1,6 @@
 import express from "express";
 import * as authController from "../controller/user.controller.js";
-import authMiddleware from "../middleware/auth.middleware.js";
+import createAuthMiddleware from "../middleware/auth.middleware.js";
 import * as validate from "../middleware/validation.middleware.js";
 import passport from "passport";
 
@@ -46,34 +46,34 @@ router.get('/google/callback',
   authController.googleOAuthCallback);
 
 
-router.get("/me", authMiddleware(["user"]), authController.getMe);
+router.get("/me", createAuthMiddleware(["user","admin"]), authController.getMe);
 
-router.get("/logout", authMiddleware(["user"]), authController.logout);
+router.get("/logout", createAuthMiddleware(["user"]), authController.logout);
 
-router.get("/count",authMiddleware(["admin"]), authController.getUserCount);
+router.get("/count",createAuthMiddleware(["admin"]), authController.getUserCount);
 
-router.get("/users", authMiddleware(["admin"]), authController.getUser);
+router.get("/users", createAuthMiddleware(["admin"]), authController.getUser);
 
 router.get(
   "/users/:id",
-  authMiddleware(["admin"]),
+  createAuthMiddleware(["admin"]),
   authController.getUserById,
 );
 
 router.delete(
   "/users/:id",
-  authMiddleware(["admin"]),
+  createAuthMiddleware(["admin"]),
   authController.deleteUser,
 );
 
 router.patch(
   "/users/:id/block",
-  authMiddleware(["admin"]),
+  createAuthMiddleware(["admin"]),
   authController.blockUser,
 );
 
-router.get('/users/me/addresses', authMiddleware(["user"]), authController.getUserAddresses);
-router.post('/users/me/addresses', authMiddleware(["user"]), authController.addUserAddress);
-router.delete('/users/me/addresses/:addressId', authMiddleware(["user"]), authController.deleteUserAddress);
+router.get('/users/me/addresses', createAuthMiddleware(["user"]), authController.getUserAddresses);
+router.post('/users/me/addresses', createAuthMiddleware(["user"]), authController.addUserAddress);
+router.delete('/users/me/addresses/:addressId', createAuthMiddleware(["user"]), authController.deleteUserAddress);
 
 export default router;

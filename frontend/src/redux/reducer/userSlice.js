@@ -8,7 +8,9 @@ export const sendSignupOtp = createAsyncThunk(
     try {
       const res = await axios.post(
         "http://localhost:3000/api/auth/signup-phone",
-        data,
+        data,{
+          withCredentials:true
+        }
       );
       return { ...data, message: res.data.message };
     } catch (error) {
@@ -27,7 +29,9 @@ export const verifySignupOtp = createAsyncThunk(
           phone,
           otp,
           password,
-        },
+        },{
+          withCredentials:true
+        }
       );
       return res.data;
     } catch (error) {
@@ -43,6 +47,9 @@ export const sendLoginOtp = createAsyncThunk(
       const res = await axios.post(
         "http://localhost:3000/api/auth/login-phone",
         { phone },
+        {
+          withCredentials:true
+        }
       );
 
       return { phone, message: res.data.message };
@@ -63,7 +70,9 @@ export const verifyLoginOtp = createAsyncThunk(
         {
           phone,
           otp,
-        },
+        },{
+          withCredentials: true
+        }
       );
       console.log("VERIFY LOGIN RESPONSE:", res.data);  
       return res.data;
