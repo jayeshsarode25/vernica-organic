@@ -142,7 +142,7 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(verifySignupOtp.fulfilled, (state, action) => {
-        state.user = action.payload;
+        state.user = action.payload.user;
         state.step = "authenticated";
       })
 
@@ -152,7 +152,7 @@ const authSlice = createSlice({
       })
 
       .addCase(verifyLoginOtp.fulfilled, (state, action) => {
-        state.user = action.payload;
+        state.user = action.payload.user;
         state.step = "authenticated";
       })
       .addCase(getMe.pending, (state) => {
@@ -160,7 +160,7 @@ const authSlice = createSlice({
       })
       .addCase(getMe.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload;
+        state.user = action.payload.user;
       })
       .addCase(getMe.rejected, (state) => {
         state.loading = false;

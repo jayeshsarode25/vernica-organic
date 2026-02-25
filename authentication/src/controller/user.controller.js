@@ -105,7 +105,7 @@ export async function signUpVerifyOtp(req, res) {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
+      secure: false,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -116,6 +116,7 @@ export async function signUpVerifyOtp(req, res) {
         phone: user.phone,
         name: user.name,
         email: user.email,
+        role : user.role,
         isPhoneVerified: user.isPhoneVerified,
       },
     });

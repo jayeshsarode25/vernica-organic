@@ -1,11 +1,12 @@
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
-import { getMe, sendSignupOtp, verifySignupOtp } from "../redux/reducer/userSlice";
+import { sendSignupOtp, verifySignupOtp } from "../redux/reducer/userSlice";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const SignUp = () => {
   const dispatch = useDispatch();
+  const location = useLocation();
 
   const { step, loading } = useSelector((state) => state.auth);
 
@@ -45,16 +46,19 @@ const SignUp = () => {
         }),
       ).unwrap();
 
-      const userData = await dispatch(getMe()).unwrap();
+       const from = location.state?.from?.pathname;
 
-      if (userData.role === "admin") {
-        navigate("/admin/dashboard");
-      } else {
-        navigate("/");
-      }
-    } catch (error) {
-      console.error("OTP verification failed:", error);
+    if (from) {
+      navigate(from, { replace: true });
+    } else if (loginData.user.role === "admin") {
+      navigate("/admin/dashboard", { replace: true });
+    } else {
+      navigate("/", { replace: true });
     }
+
+  } catch (error) {
+    console.error("OTP verification failed:", error);
+  }
   };
 
   return (
