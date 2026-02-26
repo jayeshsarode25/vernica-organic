@@ -5,6 +5,7 @@ import { featchProductById } from "../../redux/reducer/productSlice";
 import ProductInfoSection from "./ProductInfoSection";
 import TestimonialSection from "../TestimonialSection";
 import Footer from "../../pages/Footer";
+import { addToCart } from "../../redux/reducer/cartSlice";
 
 const ProdectDetail = () => {
   const { id } = useParams();
@@ -95,7 +96,11 @@ const ProdectDetail = () => {
           </div>
 
           <div className="mt-8 space-y-3">
-            <button className="w-full bg-black text-white py-4 rounded-xl font-semibold">
+            <button 
+            onClick={() => {
+              console.log("Adding to cart:", single._id);
+              dispatch(addToCart({productId: single._id, qty}))}}
+            className="w-full bg-black text-white py-4 rounded-xl font-semibold">
               Add to Cart
             </button>
 
@@ -107,7 +112,6 @@ const ProdectDetail = () => {
           <p className="mt-6 text-sm text-gray-500">Stock: {single.stock}</p>
         </div>
       </div>
-      {/* <div className="max-w-5xl mx-auto grid grid-cols-2 gap-10">...</div> */}
 
       <ProductInfoSection product={single} />
 

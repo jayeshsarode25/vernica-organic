@@ -1,11 +1,12 @@
 import cartModel from "../model/cart.model.js";
 
-
 export const getCart = async (req, res) => {
   const userId = req.user.userId;
 
   try {
-    let cart = await cartModel.findOne({ user: userId });
+    let cart = await cartModel
+      .findOne({ user: userId })
+      .populate("items.productId");
 
     if (!cart) {
       cart = new cartModel({ user: userId, items: [] });
@@ -107,10 +108,10 @@ export const removeItemFromCart = async (req, res) => {
       { user: userId },
       {
         $pull: {
-          items: { productId: productId }   
-        }
+          items: { productId: productId },
+        },
       },
-      { returnDocument: "after" }
+      { returnDocument: "after" },
     );
 
     if (!updatedCart) {
@@ -121,7 +122,6 @@ export const removeItemFromCart = async (req, res) => {
       message: "Item removed from cart",
       cart: updatedCart,
     });
-
   } catch (error) {
     console.error("Remove Item Failed", error);
     res.status(500).json({ message: "Internal Server Error" });

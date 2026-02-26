@@ -1,14 +1,19 @@
 import { ShoppingCart } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
+import { addToCart } from "../../redux/reducer/cartSlice";
 
 const ProductCart = ({ product }) => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const image = product.images?.[0]?.url;
   console.log(product);
   return (
-    <div 
-    onClick={()=> navigate(`/product/${product._id}`)}
-    className="border rounded-xl p-3 shadow-sm hover:shadow-md transition">
+    <div
+      onClick={() => navigate(`/product/${product._id}`)}
+      className="border rounded-xl p-3 shadow-sm hover:shadow-md transition"
+    >
       <Link to={`/product/${product._id}`}>
         <img
           src={image || "/placeholder.png"}
@@ -41,6 +46,11 @@ const ProductCart = ({ product }) => {
 
           <button
             disabled={product.stock === 0}
+            onClick={(e) => {
+              console.log("addto cart",product._id)
+              e.stopPropagation();
+              dispatch(addToCart({ productId: product._id, qty: 1 }));
+            }}
             className="w-full flex items-center justify-center gap-2 bg-black text-white py-2 rounded-lg hover:bg-gray-800 transition disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             <ShoppingCart size={18} />

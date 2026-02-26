@@ -22,15 +22,18 @@ async function uploadImage({ buffer, folder = '/Varnika-products' }) {
     };
 }
 
-async function uploadVideo({buffer, folder = '/varnika-videos'}){
+async function uploadVideo({buffer,originalname, folder = '/varnika-videos'}){
+    const ext = originalname?.split(".").pop() || "mp4";
+
     const res = await imageKit.upload({
         file: buffer,
-        fileName: uuidv4(),
-        folder
+        fileName: `${uuidv4()}.${ext}`,
+        folder,
+        useUniqueFileName: false
     });
     return{
         url: res.url,
-        thumbnail: res.thumbnailUrl || res.url,
+        thumbnail: `${res.thumbnailUrl || res.url}?tr=so-1`,
         id: res.fileId
     }
 }

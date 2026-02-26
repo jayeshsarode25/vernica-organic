@@ -5,7 +5,6 @@ import Login from "../pages/Login";
 import SignUp from "../pages/SignUp";
 import PageNotFound from "../pages/PageNotFound";
 import BlogPage from "../pages/BlogPage";
-import Cart from "../pages/Cart";
 import UserProfile from "../components/user/UserProfile";
 import ContactUs from "../pages/Contactus";
 import AboutUs from "../pages/AboutUs";
@@ -29,14 +28,7 @@ const MainRoutes = () => {
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/product" element={<Products />} />
         <Route path="/product/:id" element={<ProdectDetail />} />
-        <Route
-          path="/cart"
-          element={
-            <AuthRoute role = "user">
-              <Cart />
-            </AuthRoute>
-          }
-        />
+      
         <Route
           path="/user-profile"
           element={

@@ -70,11 +70,12 @@ export const clearCart = createAsyncThunk(
 const cartSlice = createSlice({
   name: "cart",
   initialState: {
-    cart: null,
+    cart: {items:[]},
+    totals: null,
     loading: false,
     error: null,
   },
-  reducers: {},
+  reducers: {}, 
   extraReducers: (builder) => {
     builder
 
@@ -84,7 +85,8 @@ const cartSlice = createSlice({
       })
       .addCase(getCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.cart = action.payload;
+        state.cart = action.payload.cart;
+        state.totals = action.payload.totals;
       })
       .addCase(getCart.rejected, (state, action) => {
         state.loading = false;
@@ -97,7 +99,7 @@ const cartSlice = createSlice({
       })
       .addCase(addToCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.cart = action.payload;
+        state.cart = action.payload.cart;
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.loading = false;
@@ -110,7 +112,7 @@ const cartSlice = createSlice({
       })
       .addCase(updateCartItem.fulfilled, (state, action) => {
         state.loading = false;
-        state.cart = action.payload;
+        state.cart = action.payload.cart;
       })
       .addCase(updateCartItem.rejected, (state, action) => {
         state.loading = false;
@@ -123,7 +125,7 @@ const cartSlice = createSlice({
       })
       .addCase(removeCartItem.fulfilled, (state, action) => {
         state.loading = false;
-        state.cart = action.payload;
+        state.cart = action.payload.cart;
       })
       .addCase(removeCartItem.rejected, (state, action) => {
         state.loading = false;
@@ -144,3 +146,6 @@ const cartSlice = createSlice({
       });
   },
 });
+
+
+export default cartSlice.reducer;

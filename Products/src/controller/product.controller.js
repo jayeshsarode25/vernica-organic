@@ -29,8 +29,10 @@ export const createProduct = async (req, res) => {
     let videoUrl = "";
 
     if (req.files?.videoUrl) {
+      const file = req.files.videoUrl[0]; 
       const video = await uploadVideo({
-        buffer: req.files.videoUrl[0].buffer,
+        buffer: file.buffer,
+        originalname: file.originalname,
         folder: "products/videos",
       });
       videoUrl = {
