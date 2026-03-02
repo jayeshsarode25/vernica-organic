@@ -46,7 +46,7 @@ export default function TestimonialSection() {
       rating: 5
     },
     {
-      id: 5,
+      id: 6,
       text: "Best investment I've made this year. The bike performs excellently and customer support is top-notch. Will definitely buy again!",
       author: "Michael",
       timeAgo: "1 month ago",

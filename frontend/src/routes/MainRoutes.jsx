@@ -5,13 +5,13 @@ import Login from "../pages/Login";
 import SignUp from "../pages/SignUp";
 import PageNotFound from "../pages/PageNotFound";
 import BlogPage from "../pages/BlogPage";
-import UserProfile from "../components/user/UserProfile";
+
 import ContactUs from "../pages/Contactus";
 import AboutUs from "../pages/AboutUs";
 import ProdectDetail from "../components/products/ProdectDetail";
 import AuthRoute from "./AuthRoute";
 import AdminLayout from "../layout/AdminLayout";
-
+import UserProfile from "../pages/user/UserProfile";
 import Dashboard from "../pages/admin/Dashboard";
 import AdminProducts from "../pages/admin/AdminProducts";
 import Users from "../pages/admin/Users";
@@ -33,7 +33,7 @@ const MainRoutes = () => {
           path="/user-profile"
           element={
             <AuthRoute role="user">
-              <UserProfile />
+              < UserProfile/>
             </AuthRoute>
           }
         />

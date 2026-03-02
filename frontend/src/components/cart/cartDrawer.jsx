@@ -8,6 +8,7 @@ import {
 
 const CartDrawer = ({ open, setOpen }) => {
   const items = useSelector((state) => state.cart.items || []);
+
   const dispatch = useDispatch();
 
   const [coupon, setCoupon] = useState("");
@@ -40,7 +41,7 @@ const CartDrawer = ({ open, setOpen }) => {
       )}
 
       <div
-        className={`fixed top-0 right-0 h-full w-full sm:w-[420px] bg-white z-50 shadow-xl transform transition-transform duration-300 ${
+        className={`fixed top-0 right-0 h-full w-full sm:w-105 bg-white z-50 shadow-xl transform transition-transform duration-300 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -65,16 +66,13 @@ const CartDrawer = ({ open, setOpen }) => {
             {items.map((item) => {
               if (!item?.productId) return null;
 
-              // ✅ Fix: safely extract productId as a plain string
-              const productId = item.productId._id?.toString() || item.productId?.toString();
+              const productId =
+                item.productId._id?.toString() || item.productId?.toString();
 
               if (!productId) return null;
 
               return (
-                <div
-                  key={item._id}
-                  className="flex gap-4 border-b pb-4"
-                >
+                <div key={item._id} className="flex gap-4 border-b pb-4">
                   <img
                     src={item.productId.images?.[0]?.url}
                     alt={item.productId.title}
@@ -87,7 +85,7 @@ const CartDrawer = ({ open, setOpen }) => {
                     </h4>
 
                     <p className="text-gray-500 text-sm">
-                      ₹{item.productId.priceAmount}
+                      ₹{item.productId.price?.amount}
                     </p>
 
                     <div className="flex items-center gap-3 mt-2">
@@ -97,9 +95,9 @@ const CartDrawer = ({ open, setOpen }) => {
                         onClick={() =>
                           dispatch(
                             updateCartItem({
-                              productId, // ✅ using safe string
+                              productId,
                               qty: item.quantity - 1,
-                            })
+                            }),
                           )
                         }
                       >
@@ -113,9 +111,9 @@ const CartDrawer = ({ open, setOpen }) => {
                         onClick={() =>
                           dispatch(
                             updateCartItem({
-                              productId, // ✅ using safe string
+                              productId,
                               qty: item.quantity + 1,
-                            })
+                            }),
                           )
                         }
                       >
@@ -124,7 +122,7 @@ const CartDrawer = ({ open, setOpen }) => {
 
                       <button
                         className="text-red-500 text-xs ml-auto"
-                        onClick={() => dispatch(removeCartItem(productId))} // ✅ using safe string
+                        onClick={() => dispatch(removeCartItem(productId))}
                       >
                         Remove
                       </button>

@@ -53,7 +53,6 @@ const productSlice = createSlice({
       })
       .addCase(featchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        console.log("API RESPONSE:", action.payload);
         state.list = action.payload || [];
       })
       .addCase(featchProducts.rejected, (state, action) => {

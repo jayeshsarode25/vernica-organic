@@ -44,7 +44,6 @@ export const removeCartItem = createAsyncThunk(
   "cart/remove",
   async (productId, thunkApi) => {
     try {
-      // ✅ Fix: guard against undefined productId
       if (!productId) {
         return thunkApi.rejectWithValue({ message: "productId is required" });
       }
@@ -82,7 +81,6 @@ const cartSlice = createSlice({
       .addCase(getCart.fulfilled, (state, action) => {
         state.loading = false;
         state.items = action.payload.cart?.items || [];
-        console.log("Cart API Response:", action.payload);
       })
       .addCase(getCart.rejected, (state) => {
         state.loading = false;
@@ -90,7 +88,6 @@ const cartSlice = createSlice({
       .addCase(addToCart.fulfilled, (state, action) => {
         state.items = action.payload.cart?.items || [];
         state.totals = action.payload.totals || null;
-        console.log("Cart API Response:", action.payload);
       })
       .addCase(updateCartItem.fulfilled, (state, action) => {
         state.items = action.payload.cart?.items || [];

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+
 const cartSchema = new mongoose.Schema({
     user:{
         type:mongoose.Schema.Types.ObjectId,
@@ -7,7 +8,7 @@ const cartSchema = new mongoose.Schema({
     },
     items:[{
         productId:{
-            type:mongoose.Schema.Types.ObjectId,
+            type:mongoose.Schema.Types.ObjectId, 
             required: true
         },
         quantity:{

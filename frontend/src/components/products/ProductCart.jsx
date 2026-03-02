@@ -10,7 +10,7 @@ const ProductCart = ({ product }) => {
   const image = product.images?.[0]?.url;
   const items = useSelector((state) => state.cart.items);
 
-  // ✅ Fix: normalize both sides to string for safe comparison
+ 
   const isInCart = items.some(
     (item) =>
       (item.productId?._id?.toString() || item.productId?.toString()) ===
