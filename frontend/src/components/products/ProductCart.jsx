@@ -8,55 +8,72 @@ const ProductCart = ({ product }) => {
   const navigate = useNavigate();
 
   const image = product.images?.[0]?.url;
-  console.log(product);
+  const items = useSelector((state) => state.cart.items);
+
+  // ✅ Fix: normalize both sides to string for safe comparison
+  const isInCart = items.some(
+    (item) =>
+      (item.productId?._id?.toString() || item.productId?.toString()) ===
+      product._id?.toString()
+  );
+
+  const handleAddToCart = () => {
+    if (isInCart) return;
+    dispatch(
+      addToCart({
+        productId: product._id,
+        qty: 1,
+      }),
+    );
+  };
+
   return (
-    <div
-      onClick={() => navigate(`/product/${product._id}`)}
-      className="border rounded-xl p-3 shadow-sm hover:shadow-md transition"
-    >
+    <div className="group border rounded-2xl p-4 shadow-sm hover:shadow-lg transition-all duration-300 bg-white">
       <Link to={`/product/${product._id}`}>
         <img
           src={image || "/placeholder.png"}
           alt={product.title}
-          className="w-full h-52 object-cover rounded-lg"
+          className="w-full h-56 object-cover rounded-xl group-hover:scale-105 transition"
         />
       </Link>
 
-      <div className="mt-3 space-y-1">
+      <div className="mt-4 space-y-2">
         <h3 className="font-semibold text-lg line-clamp-1">{product.title}</h3>
 
         <p className="text-gray-500 text-sm line-clamp-2">
           {product.description || "No description"}
         </p>
 
-        <div className="mt-3 space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="font-bold text-xl">₹{product.price?.amount}</span>
+        <div className="flex justify-between items-center mt-3">
+          <span className="font-bold text-xl">₹{product.price?.amount}</span>
 
-            {product.stock > 0 ? (
-              <span className="text-green-600 text-sm font-medium">
-                In Stock
-              </span>
-            ) : (
-              <span className="text-red-500 text-sm font-medium">
-                Out of Stock
-              </span>
-            )}
-          </div>
-
-          <button
-            disabled={product.stock === 0}
-            onClick={(e) => {
-              console.log("addto cart",product._id)
-              e.stopPropagation();
-              dispatch(addToCart({ productId: product._id, qty: 1 }));
-            }}
-            className="w-full flex items-center justify-center gap-2 bg-black text-white py-2 rounded-lg hover:bg-gray-800 transition disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            <ShoppingCart size={18} />
-            Add to Cart
-          </button>
+          {product.stock > 0 ? (
+            <span className="text-green-600 text-sm font-medium">In Stock</span>
+          ) : (
+            <span className="text-red-500 text-sm font-medium">
+              Out of Stock
+            </span>
+          )}
         </div>
+
+        <button
+          disabled={isInCart || product.stock === 0}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddToCart();
+          }}
+          className={`w-full mt-3 py-3 rounded-xl font-semibold transition-all duration-200 ${
+            isInCart
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-black text-white hover:bg-gray-900 active:scale-95"
+          }`}
+        >
+          {product.stock === 0
+            ? "Out of Stock"
+            : isInCart
+              ? "Already in Cart"
+              : "Add to Cart"}
+        </button>
       </div>
     </div>
   );

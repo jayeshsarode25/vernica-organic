@@ -11,6 +11,7 @@ const ProdectDetail = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const { single, loading } = useSelector((s) => s.products);
+  const items = useSelector((state) => state.cart?.items || []);
 
   const [qty, setQty] = useState(1);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -40,6 +41,18 @@ const ProdectDetail = () => {
   ];
 
   const activeItem = gallery[activeIndex];
+
+  // ✅ Fix: normalize both sides to string for safe comparison
+  const isInCart = items.some(
+    (item) =>
+      (item.productId?._id?.toString() || item.productId?.toString()) ===
+      single?._id?.toString()
+  );
+
+  const handleAddToCart = () => {
+    if (isInCart) return;
+    dispatch(addToCart({ productId: single._id, qty }));
+  };
 
   return (
     <>
@@ -96,12 +109,16 @@ const ProdectDetail = () => {
           </div>
 
           <div className="mt-8 space-y-3">
-            <button 
-            onClick={() => {
-              console.log("Adding to cart:", single._id);
-              dispatch(addToCart({productId: single._id, qty}))}}
-            className="w-full bg-black text-white py-4 rounded-xl font-semibold">
-              Add to Cart
+            <button
+              onClick={handleAddToCart}
+              disabled={isInCart}
+              className={`w-full py-4 rounded-xl font-semibold ${
+                isInCart
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-black text-white"
+              }`}
+            >
+              {isInCart ? "Already in Cart" : "Add to Cart"}
             </button>
 
             <button className="w-full border py-4 rounded-xl font-semibold">

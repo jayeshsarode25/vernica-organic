@@ -1,22 +1,24 @@
 import { useDispatch, useSelector } from "react-redux";
-
 import { useState } from "react";
-import { clearCart, removeCartItem, updateCartItem } from "../../redux/reducer/cartSlice";
+import {
+  clearCart,
+  removeCartItem,
+  updateCartItem,
+} from "../../redux/reducer/cartSlice";
 
 const CartDrawer = ({ open, setOpen }) => {
-  const { cart } = useSelector((state) => state.cart);
+  const items = useSelector((state) => state.cart.items || []);
   const dispatch = useDispatch();
 
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
 
-  const items = cart?.items || [];
-
   const subtotal = items.reduce((acc, item) => {
-    return acc + item.productId.priceAmount * item.quantity;
+    if (!item?.productId) return acc;
+    return acc + (item.productId.price?.amount || 0) * item.quantity;
   }, 0);
 
-  const total = subtotal - discount;
+  const total = Math.max(subtotal - discount, 0);
 
   const applyCoupon = () => {
     if (coupon === "SAVE10") {
@@ -30,7 +32,6 @@ const CartDrawer = ({ open, setOpen }) => {
 
   return (
     <>
-      
       {open && (
         <div
           className="fixed inset-0 bg-black/40 z-40"
@@ -38,15 +39,12 @@ const CartDrawer = ({ open, setOpen }) => {
         />
       )}
 
-      
       <div
         className={`fixed top-0 right-0 h-full w-full sm:w-[420px] bg-white z-50 shadow-xl transform transition-transform duration-300 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
-
-          
           <div className="flex justify-between items-center p-5 border-b">
             <h2 className="text-xl font-bold">Your Cart</h2>
             <button
@@ -64,77 +62,81 @@ const CartDrawer = ({ open, setOpen }) => {
               </p>
             )}
 
-            {items.map((item) => (
-              <div
-                key={item.productId._id}
-                className="flex gap-4 border-b pb-4"
-              >
-                <img
-                  src={item.productId.images?.[0]}
-                  alt={item.productId.title}
-                  className="w-16 h-16 object-cover rounded-lg"
-                />
+            {items.map((item) => {
+              if (!item?.productId) return null;
 
-                <div className="flex-1">
-                  <h4 className="font-medium text-sm">
-                    {item.productId.title}
-                  </h4>
+              // ✅ Fix: safely extract productId as a plain string
+              const productId = item.productId._id?.toString() || item.productId?.toString();
 
-                  <p className="text-gray-500 text-sm">
-                    ₹{item.productId.priceAmount}
-                  </p>
+              if (!productId) return null;
 
-                  <div className="flex items-center gap-3 mt-2">
-                    <button
-                      className="border px-2 rounded"
-                      disabled={item.quantity <= 1}
-                      onClick={() =>
-                        dispatch(
-                          updateCartItem({
-                            productId: item.productId._id,
-                            qty: item.quantity - 1,
-                          })
-                        )
-                      }
-                    >
-                      −
-                    </button>
+              return (
+                <div
+                  key={item._id}
+                  className="flex gap-4 border-b pb-4"
+                >
+                  <img
+                    src={item.productId.images?.[0]?.url}
+                    alt={item.productId.title}
+                    className="w-16 h-16 object-cover rounded-lg"
+                  />
 
-                    <span>{item.quantity}</span>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm">
+                      {item.productId.title}
+                    </h4>
 
-                    <button
-                      className="border px-2 rounded"
-                      onClick={() =>
-                        dispatch(
-                          updateCartItem({
-                            productId: item.productId._id,
-                            qty: item.quantity + 1,
-                          })
-                        )
-                      }
-                    >
-                      +
-                    </button>
+                    <p className="text-gray-500 text-sm">
+                      ₹{item.productId.priceAmount}
+                    </p>
 
-                    <button
-                      className="text-red-500 text-xs ml-auto"
-                      onClick={() =>
-                        dispatch(removeCartItem(item.productId._id))
-                      }
-                    >
-                      Remove
-                    </button>
+                    <div className="flex items-center gap-3 mt-2">
+                      <button
+                        className="border px-2 rounded"
+                        disabled={item.quantity <= 1}
+                        onClick={() =>
+                          dispatch(
+                            updateCartItem({
+                              productId, // ✅ using safe string
+                              qty: item.quantity - 1,
+                            })
+                          )
+                        }
+                      >
+                        −
+                      </button>
+
+                      <span>{item.quantity}</span>
+
+                      <button
+                        className="border px-2 rounded"
+                        onClick={() =>
+                          dispatch(
+                            updateCartItem({
+                              productId, // ✅ using safe string
+                              qty: item.quantity + 1,
+                            })
+                          )
+                        }
+                      >
+                        +
+                      </button>
+
+                      <button
+                        className="text-red-500 text-xs ml-auto"
+                        onClick={() => dispatch(removeCartItem(productId))} // ✅ using safe string
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-         
           {items.length > 0 && (
             <div className="p-5 border-t space-y-4">
-
-              
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -157,7 +159,6 @@ const CartDrawer = ({ open, setOpen }) => {
                 </p>
               )}
 
-             
               <div className="flex justify-between text-sm">
                 <span>Subtotal</span>
                 <span>₹{subtotal}</span>

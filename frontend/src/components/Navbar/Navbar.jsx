@@ -14,10 +14,9 @@ const Navbar = () => {
   const boxRef = useRef();
 
   const { user } = useSelector((state) => state.auth);
-  const { cart } = useSelector((state) => state.cart);
+  const { items } = useSelector((state) => state.cart); 
 
-  const cartCount =
-    cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+  const cartCount = items?.length || 0;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
