@@ -4,6 +4,8 @@ import productReducer from '../redux/reducer/productSlice'
 import adminReducer from '../redux/reducer/adminSlice'
 import seaechReducer from '../redux/reducer/searchSlice'
 import cartReducer from '../redux/reducer/cartSlice'
+import orderReducer from '../redux/reducer/orderSlice'
+import paymentReducer from '../redux/reducer/paymentSlice'
 
 export const store = configureStore({
   reducer: {
@@ -12,5 +14,7 @@ export const store = configureStore({
     admin : adminReducer,
     search : seaechReducer,
     cart: cartReducer,
+    order : orderReducer,
+    payment : paymentReducer,
   },
 })

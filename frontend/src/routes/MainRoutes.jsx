@@ -15,6 +15,8 @@ import UserProfile from "../pages/user/UserProfile";
 import Dashboard from "../pages/admin/Dashboard";
 import AdminProducts from "../pages/admin/AdminProducts";
 import Users from "../pages/admin/Users";
+import CheckoutPage from "../pages/order/CheckoutPage";
+
 
 const MainRoutes = () => {
   return (
@@ -37,6 +39,17 @@ const MainRoutes = () => {
             </AuthRoute>
           }
         />
+
+        <Route
+          path="/checkout"
+          element={
+            <AuthRoute role="user">
+              < CheckoutPage/>
+            </AuthRoute>
+          }
+        />
+
+        
 
         <Route
           path="/admin/dashboard"

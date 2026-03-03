@@ -5,11 +5,14 @@ import {
   removeCartItem,
   updateCartItem,
 } from "../../redux/reducer/cartSlice";
+import { useNavigate } from "react-router-dom";
 
 const CartDrawer = ({ open, setOpen }) => {
   const items = useSelector((state) => state.cart.items || []);
 
   const dispatch = useDispatch();
+
+  const navigate = useNavigate();
 
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -167,7 +170,13 @@ const CartDrawer = ({ open, setOpen }) => {
                 <span>₹{total}</span>
               </div>
 
-              <button className="w-full bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 transition">
+              <button
+                className="w-full bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 transition"
+                onClick={() => {
+                  setOpen(false); 
+                  navigate("/checkout"); 
+                }}
+              >
                 Checkout
               </button>
 
