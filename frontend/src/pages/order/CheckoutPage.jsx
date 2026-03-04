@@ -161,6 +161,9 @@ export default function CheckoutPage() {
 
           {/* Submit */}
           <button
+            onClick={()=>{
+              navigate("/checkout/payment")
+            }}
             type="submit"
             disabled={loading}
             className="w-full mt-2 py-3 bg-gray-900 text-white text-sm font-semibold rounded-lg

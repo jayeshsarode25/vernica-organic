@@ -5,7 +5,6 @@ import Login from "../pages/Login";
 import SignUp from "../pages/SignUp";
 import PageNotFound from "../pages/PageNotFound";
 import BlogPage from "../pages/BlogPage";
-
 import ContactUs from "../pages/Contactus";
 import AboutUs from "../pages/AboutUs";
 import ProdectDetail from "../components/products/ProdectDetail";
@@ -16,6 +15,7 @@ import Dashboard from "../pages/admin/Dashboard";
 import AdminProducts from "../pages/admin/AdminProducts";
 import Users from "../pages/admin/Users";
 import CheckoutPage from "../pages/order/CheckoutPage";
+import PaymentPage from "../pages/order/PaymentPage";
 
 
 const MainRoutes = () => {
@@ -49,7 +49,14 @@ const MainRoutes = () => {
           }
         />
 
-        
+        <Route
+          path="/checkout/payment"
+          element={
+            <AuthRoute role="user">
+              < PaymentPage/>
+            </AuthRoute>
+          }
+        />
 
         <Route
           path="/admin/dashboard"

@@ -22,8 +22,9 @@ export const createOrder = async (req, res) => {
 
     const products = await Promise.all(
       cart.items.map(async (item) => {
+        const productId = item.productId?._id || item.productId; // ✅ Fix here
         const productResponce = await axios.get(
-          `http://localhost:3002/api/products/${item.productId}`,
+          `http://localhost:3002/api/products/${productId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -37,8 +38,9 @@ export const createOrder = async (req, res) => {
     let totalAmount = 0;
 
     const orderItems = cart.items.map((item) => {
+      const productId = item.productId?._id || item.productId; 
       const product = products.find(
-        (p) => p._id.toString() === item.productId.toString(),
+        (p) => p._id.toString() === productId.toString(),
       );
 
       if (!product) {
@@ -54,7 +56,7 @@ export const createOrder = async (req, res) => {
       totalAmount += itemTotal;
 
       return {
-        productId: item.productId,
+        productId: productId,
         quantity: item.quantity,
         price: {
           amount: itemTotal,
@@ -85,7 +87,6 @@ export const createOrder = async (req, res) => {
       .json({ message: "Internal server error", error: error.message });
   }
 };
-
 export const getMyOrder = async (req, res) => {
   const userId = req.user.userId;
 
@@ -212,20 +213,20 @@ export const updateOrderAddress = async (req, res) => {
       .json({ message: "Internal server error", error: err.message });
   }
 };
-//admin controller 
+//admin controller
 export const getOrderDashboard = async (req, res) => {
   try {
     const totalOrders = await orderModel.countDocuments();
 
     const revenueData = await orderModel.aggregate([
-      { $match: { status: { $in: ["CONFIRMED","SHIPPED","DELIVERED"] } } },
-      { $group: { _id: null, total: { $sum: "$totalPrice.amount" } } }
+      { $match: { status: { $in: ["CONFIRMED", "SHIPPED", "DELIVERED"] } } },
+      { $group: { _id: null, total: { $sum: "$totalPrice.amount" } } },
     ]);
 
     const totalRevenue = revenueData[0]?.total || 0;
 
     const ordersByStatus = await orderModel.aggregate([
-      { $group: { _id: "$status", count: { $sum: 1 } } }
+      { $group: { _id: "$status", count: { $sum: 1 } } },
     ]);
 
     const topProduct = await orderModel.aggregate([
@@ -233,20 +234,19 @@ export const getOrderDashboard = async (req, res) => {
       {
         $group: {
           _id: "$item.product",
-          sold: { $sum: "$item.quantity" }
-        }
+          sold: { $sum: "$item.quantity" },
+        },
       },
       { $sort: { sold: -1 } },
-      { $limit: 5 }
+      { $limit: 5 },
     ]);
 
     res.json({
       totalOrders,
       totalRevenue,
       ordersByStatus,
-      topProduct
+      topProduct,
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Order dashboard error" });
@@ -273,7 +273,7 @@ export const updateOrderStatus = async (req, res) => {
     const order = await orderModel.findByIdAndUpdate(
       orderId,
       { status },
-      { new: true }
+      { new: true },
     );
 
     if (!order) {

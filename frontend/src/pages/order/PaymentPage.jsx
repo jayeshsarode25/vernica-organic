@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { createPayment, verifyPayment, resetPayment } from "../store/slices/paymentSlice";
-import { clearCurrentOrder } from "../store/slices/orderSlice";
-import { clearCart } from "../store/slices/cartSlice";
+import { createPayment, verifyPayment, resetPayment } from "../../redux/reducer/paymentSlice";
+import { clearCurrentOrder } from "../../redux/reducer/orderSlice";
+import { clearCart } from "../../redux/reducer/cartSlice";
 
 // ─── Load Razorpay script dynamically ─────────────────────────
 const loadRazorpayScript = () =>
