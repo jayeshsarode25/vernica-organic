@@ -5,10 +5,10 @@ import { createPayment, verifyPayment, resetPayment } from "../../redux/reducer/
 import { clearCurrentOrder } from "../../redux/reducer/orderSlice";
 import { clearCart } from "../../redux/reducer/cartSlice";
 
-// ─── Load Razorpay script dynamically ─────────────────────────
+// ─── Load Razorpay Script ──────────────────────────────────────
 const loadRazorpayScript = () =>
   new Promise((resolve) => {
-    if (window.Razorpay) return resolve(true); // already loaded
+    if (window.Razorpay) return resolve(true);
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.onload = () => resolve(true);
@@ -22,50 +22,53 @@ export default function PaymentPage() {
 
   const { user } = useSelector((state) => state.auth);
   const { currentOrder } = useSelector((state) => state.order);
-  const { status, error, paymentData } = useSelector((state) => state.payment);
+  const { status, error } = useSelector((state) => state.payment);
 
-  // orderId — prefer Redux, fallback to sessionStorage
   const orderId =
     currentOrder?._id ?? sessionStorage.getItem("current_order_id");
 
-  // ── Guards ─────────────────────────────────────────────────
+  // ── Guards ────────────────────────────────────────────────
   useEffect(() => {
     if (!user) navigate("/login");
   }, [user, navigate]);
 
   useEffect(() => {
-    if (!orderId) navigate("/checkout"); // no order → back to checkout
+    if (!orderId) navigate("/checkout");
   }, [orderId, navigate]);
 
-  // ── Cleanup on unmount ─────────────────────────────────────
+  // ── Auto-trigger Razorpay when page loads ─────────────────
+  useEffect(() => {
+    if (orderId && user) {
+      handlePayNow();
+    }
+  }, []); // runs once on mount
+
+  // ── Cleanup on unmount ────────────────────────────────────
   useEffect(() => {
     return () => dispatch(resetPayment());
   }, [dispatch]);
 
-  // ── Main payment handler ───────────────────────────────────
+  // ── Main handler ──────────────────────────────────────────
   const handlePayNow = async () => {
-    // 1. Load Razorpay SDK
     const loaded = await loadRazorpayScript();
     if (!loaded) {
       alert("Failed to load Razorpay. Check your internet connection.");
       return;
     }
 
-    // 2. Create payment on backend → get razorpayOrderId
+    // Step 1 — create payment on backend
     const result = await dispatch(createPayment(orderId));
-    if (createPayment.rejected.match(result)) return; // error shown via state
+    if (createPayment.rejected.match(result)) return;
 
     const { razorpayOrderId, price } = result.payload.newPayment;
 
-    // 3. Open Razorpay checkout
+    // Step 2 — open Razorpay modal (Razorpay handles method selection)
     const options = {
-      // VITE project: import.meta.env.VITE_RAZORPAY_KEY_ID
-      // CRA project : process.env.REACT_APP_RAZORPAY_KEY_ID
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: price.amount,           // in paise — backend sets this
-      currency: price.currency,       // "INR"
-      order_id: razorpayOrderId,      // from backend createPayment response
-      name: "Vernika Organic",
+      amount: price.amount,
+      currency: price.currency,
+      order_id: razorpayOrderId,
+      name: "Your Store",
       description: `Order #${orderId}`,
       prefill: {
         name: user?.name ?? "",
@@ -74,10 +77,8 @@ export default function PaymentPage() {
       },
       theme: { color: "#111111" },
 
-      // ── SUCCESS: Razorpay calls this after payment ──
+      // ── Payment success ──
       handler: async (response) => {
-        // response shape from Razorpay SDK:
-        // { razorpay_order_id, razorpay_payment_id, razorpay_signature }
         const verifyResult = await dispatch(
           verifyPayment({
             razorpayOrderId: response.razorpay_order_id,
@@ -85,108 +86,82 @@ export default function PaymentPage() {
             signature: response.razorpay_signature,
           })
         );
-
         if (verifyPayment.fulfilled.match(verifyResult)) {
-          // ✅ Payment verified — clean up and go to success
           dispatch(clearCart());
           dispatch(clearCurrentOrder());
           sessionStorage.removeItem("current_order_id");
           navigate(`/order/success/${orderId}`);
         }
-        // if rejected — error is shown via state.payment.error
       },
 
       modal: {
-        // User closed the Razorpay modal without paying
+        // User closed Razorpay modal — go back to checkout
         ondismiss: () => {
           dispatch(resetPayment());
-          // Stay on payment page — user can retry
+          navigate("/checkout");
         },
       },
     };
 
     const rzp = new window.Razorpay(options);
-
-    // ── PAYMENT FAILED (card declined, timeout etc.) ──
     rzp.on("payment.failed", (response) => {
-      console.error("Razorpay payment failed:", response.error);
       dispatch(resetPayment());
-      // Error description from Razorpay
-      navigate("/order/failed", {
-        state: { reason: response.error.description },
-      });
+      navigate("/order/failed", { state: { reason: response.error.description } });
     });
-
     rzp.open();
   };
 
-  // ── Render ────────────────────────────────────────────────
   const isLoading = status === "initiating" || status === "verifying";
 
+  // ── Render — shown briefly while Razorpay loads ───────────
   return (
-    <div className="max-w-md mx-auto px-4 py-16 flex flex-col items-center gap-6">
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="flex flex-col items-center gap-5 text-center">
 
-      {/* Order info card */}
-      <div className="w-full bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-center">
-        <div className="text-3xl mb-3">🔒</div>
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Secure Payment</h2>
-        <p className="text-sm text-gray-500 mb-4">Powered by Razorpay</p>
-
-        {orderId && (
-          <div className="bg-gray-50 rounded-lg px-4 py-2 inline-block">
-            <span className="text-xs text-gray-500">Order ID: </span>
-            <span className="text-xs font-mono font-semibold text-gray-700">
-              {orderId}
-            </span>
-          </div>
+        {/* Loading / verifying state */}
+        {!error && (
+          <>
+            <span className="w-12 h-12 border-4 border-gray-200 border-t-gray-800 rounded-full animate-spin" />
+            <div>
+              <p className="text-base font-semibold text-gray-800">
+                {status === "verifying"
+                  ? "Verifying your payment…"
+                  : "Opening Razorpay…"}
+              </p>
+              <p className="text-sm text-gray-400 mt-1">Please wait, do not refresh</p>
+            </div>
+          </>
         )}
+
+        {/* Error state — show retry button */}
+        {error && (
+          <>
+            <span className="text-4xl">⚠️</span>
+            <div>
+              <p className="text-base font-semibold text-gray-800">Payment initiation failed</p>
+              <p className="text-sm text-red-500 mt-1">{error}</p>
+            </div>
+            <div className="flex gap-3 mt-2">
+              <button
+                onClick={handlePayNow}
+                disabled={isLoading}
+                className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-lg
+                           hover:bg-gray-700 transition-colors disabled:opacity-60"
+              >
+                Retry Payment
+              </button>
+              <button
+                onClick={() => navigate("/checkout")}
+                className="px-6 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium
+                           rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Go Back
+              </button>
+            </div>
+          </>
+        )}
+
       </div>
-
-      {/* Error banner */}
-      {error && (
-        <div className="w-full flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
-          <span className="mt-0.5 shrink-0">⚠️</span>
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* Verifying state */}
-      {status === "verifying" && (
-        <div className="w-full flex items-center justify-center gap-3 bg-blue-50 border border-blue-100 text-blue-700 text-sm px-4 py-3 rounded-lg">
-          <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin shrink-0" />
-          <span>Verifying your payment… please wait</span>
-        </div>
-      )}
-
-      {/* Pay Now button */}
-      <button
-        onClick={handlePayNow}
-        disabled={isLoading}
-        className="w-full py-4 bg-gray-900 text-white font-semibold text-base rounded-xl
-                   hover:bg-gray-700 transition-colors
-                   disabled:opacity-60 disabled:cursor-not-allowed"
-      >
-        {status === "initiating" ? (
-          <span className="flex items-center justify-center gap-2">
-            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            Opening Razorpay…
-          </span>
-        ) : status === "verifying" ? (
-          "Verifying Payment…"
-        ) : (
-          "Pay Now"
-        )}
-      </button>
-
-      {/* Back link */}
-      <button
-        onClick={() => navigate("/checkout")}
-        disabled={isLoading}
-        className="text-sm text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-40"
-      >
-        ← Change delivery address
-      </button>
-
     </div>
   );
 }
