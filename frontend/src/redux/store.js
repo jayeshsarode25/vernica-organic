@@ -6,6 +6,7 @@ import seaechReducer from '../redux/reducer/searchSlice'
 import cartReducer from '../redux/reducer/cartSlice'
 import orderReducer from '../redux/reducer/orderSlice'
 import paymentReducer from '../redux/reducer/paymentSlice'
+import profileReducer from '../redux/reducer/Profileslice'
 
 export const store = configureStore({
   reducer: {
@@ -16,5 +17,6 @@ export const store = configureStore({
     cart: cartReducer,
     order : orderReducer,
     payment : paymentReducer,
+    profile : profileReducer, 
   },
 })

@@ -22,6 +22,7 @@ export function createAuthMiddleware(role = ["user"]) {
       }
 
       req.user = decoded;
+      req.user.id = decoded.userId;
       next();
     } catch (err) {
       return res.status(401).json({
