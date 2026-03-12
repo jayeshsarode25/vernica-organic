@@ -1,9 +1,12 @@
+import { validationResult } from "express-validator";
 import orderModel from "../model/order.model.js";
 import axios from "axios";
 
 export const createOrder = async (req, res) => {
+  const errors = validationResult(req);
+  console.log("VALIDATION ERRORS:", JSON.stringify(errors.array()));
   const userId = req.user.userId;
-  const token = req.cookies?.token || req.headers?.authorization?.split(" ")[1];
+  const token = req.cookies?.token;
 
   try {
     const cartResponce = await axios.get(`http://localhost:3003/api/cart/`, {
@@ -31,6 +34,7 @@ export const createOrder = async (req, res) => {
             },
           },
         );
+
         return productResponce.data.data;
       }),
     );
@@ -38,7 +42,7 @@ export const createOrder = async (req, res) => {
     let totalAmount = 0;
 
     const orderItems = cart.items.map((item) => {
-      const productId = item.productId?._id || item.productId; 
+      const productId = item.productId?._id || item.productId;
       const product = products.find(
         (p) => p._id.toString() === productId.toString(),
       );
@@ -87,6 +91,7 @@ export const createOrder = async (req, res) => {
       .json({ message: "Internal server error", error: error.message });
   }
 };
+
 export const getMyOrder = async (req, res) => {
   const userId = req.user.userId;
 

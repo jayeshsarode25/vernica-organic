@@ -16,12 +16,13 @@ export const fetchAddresses = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const addAddress = createAsyncThunk(
   "profile/addAddress",
   async (addressData, { rejectWithValue }) => {
+    console.log("ADDING ADDRESS DATA:", JSON.stringify(addressData));
     try {
       const res = await fetch(`${BASE_URL}/users/me/addresses`, {
         method: "POST",
@@ -29,12 +30,15 @@ export const addAddress = createAsyncThunk(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(addressData),
       });
-      if (!res.ok) throw new Error("Failed to add address");
-      return await res.json();
+      const data = await res.json();
+      console.log("ADD ADDRESS RESPONSE:", JSON.stringify(data));
+      if (!res.ok) throw new Error(data.message || "Failed to add address"); // ✅ use already-parsed data
+
+      return data;
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const deleteAddress = createAsyncThunk(
@@ -50,7 +54,7 @@ export const deleteAddress = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const logoutUser = createAsyncThunk(
@@ -62,7 +66,7 @@ export const logoutUser = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 // ─── Slice ───────────────────────────────────────────────────────────────────
@@ -104,7 +108,7 @@ const profileSlice = createSlice({
       .addCase(fetchAddresses.fulfilled, (state, action) => {
         state.addressesLoading = false;
         const data = action.payload;
-        const list = Array.isArray(data) ? data : data.addresses ?? [];
+        const list = Array.isArray(data) ? data : (data.addresses ?? []);
         state.addresses = list;
         // Auto-select default address if nothing is selected yet
         if (!state.selectedAddress) {
@@ -133,7 +137,10 @@ const profileSlice = createSlice({
       })
       .addCase(addAddress.rejected, (state, action) => {
         state.addingAddress = false;
-        state.toast = { msg: action.payload || "Failed to add address", type: "error" };
+        state.toast = {
+          msg: action.payload || "Failed to add address",
+          type: "error",
+        };
       });
 
     // deleteAddress
@@ -143,7 +150,9 @@ const profileSlice = createSlice({
       })
       .addCase(deleteAddress.fulfilled, (state, action) => {
         state.deletingAddressId = null;
-        state.addresses = state.addresses.filter((a) => a._id !== action.payload);
+        state.addresses = state.addresses.filter(
+          (a) => a._id !== action.payload,
+        );
         // If deleted address was selected, fall back to first available
         if (state.selectedAddress?._id === action.payload) {
           state.selectedAddress = state.addresses[0] ?? null;
@@ -152,7 +161,10 @@ const profileSlice = createSlice({
       })
       .addCase(deleteAddress.rejected, (state, action) => {
         state.deletingAddressId = null;
-        state.toast = { msg: action.payload || "Could not delete address", type: "error" };
+        state.toast = {
+          msg: action.payload || "Could not delete address",
+          type: "error",
+        };
       });
 
     // logoutUser

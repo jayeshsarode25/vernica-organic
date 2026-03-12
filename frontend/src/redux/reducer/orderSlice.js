@@ -17,6 +17,7 @@ export const createOrder = createAsyncThunk(
       return res.data;
     } catch (error) {
       return thunkApi.rejectWithValue(
+        console.log("ORDER ERROR RESPONSE:", error.response?.data),
         error.response?.data?.message || "Failed to create order",
       );
     }

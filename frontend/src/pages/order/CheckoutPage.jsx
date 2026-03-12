@@ -6,6 +6,7 @@ import {
   fetchAddresses,
   addAddress,
   setSelectedAddress,
+  setToast,
 } from "../../redux/reducer/Profileslice"; // adjust path
 
 // ─── Inline Add Address Form ─────────────────────────────────────────────────
@@ -14,17 +15,23 @@ function AddAddressForm({ onCancel }) {
   const adding = useSelector((s) => s.profile.addingAddress);
 
   const [form, setForm] = useState({
-    street: "", city: "", state: "", pincode: "", country: "India", isDefault: false,
+    street: "",
+    city: "",
+    state: "",
+    pincode: "",
+    country: "India",
+    isDefault: false,
   });
   const [errors, setErrors] = useState({});
 
   const validate = () => {
     const e = {};
-    if (!form.street.trim())             e.street  = "Street is required";
-    if (!form.city.trim())               e.city    = "City is required";
-    if (!form.state.trim())              e.state   = "State is required";
-    if (!/^\d{6}$/.test(form.pincode))  e.pincode = "Enter a valid 6-digit pincode";
-    if (!form.country.trim())            e.country = "Country is required";
+    if (!form.street.trim()) e.street = "Street is required";
+    if (!form.city.trim()) e.city = "City is required";
+    if (!form.state.trim()) e.state = "State is required";
+    if (!/^\d{6}$/.test(form.pincode))
+      e.pincode = "Enter a valid 6-digit pincode";
+    if (!form.country.trim()) e.country = "Country is required";
     return e;
   };
 
@@ -36,27 +43,41 @@ function AddAddressForm({ onCancel }) {
 
   const handleSave = async () => {
     const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
+    if (Object.keys(e).length) {
+      setErrors(e);
+      return;
+    }
+
+    // ✅ pincode from input is always string — good
     const result = await dispatch(addAddress(form));
-    if (!result.error) onCancel(); // close form; slice auto-selects new address
+    if (!result.error) onCancel();
   };
 
   const fields = [
-    { name: "street",  label: "Street / House No.", placeholder: "12, MG Road, Flat 3B", full: true },
-    { name: "city",    label: "City",    placeholder: "Mumbai" },
-    { name: "state",   label: "State",   placeholder: "Maharashtra" },
+    {
+      name: "street",
+      label: "Street / House No.",
+      placeholder: "12, MG Road, Flat 3B",
+      full: true,
+    },
+    { name: "city", label: "City", placeholder: "Mumbai" },
+    { name: "state", label: "State", placeholder: "Maharashtra" },
     { name: "pincode", label: "Pincode", placeholder: "400001", maxLength: 6 },
     { name: "country", label: "Country", placeholder: "India" },
   ];
 
   return (
     <div className="mt-4 border border-dashed border-gray-300 rounded-xl p-5 bg-gray-50 animate-fade-up">
-      <h3 className="text-sm font-semibold text-gray-800 mb-4">New Delivery Address</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-4">
+        New Delivery Address
+      </h3>
 
       <div className="grid grid-cols-2 gap-3">
         {fields.map((f) => (
           <div key={f.name} className={f.full ? "col-span-2" : "col-span-1"}>
-            <label className="block text-xs font-medium text-gray-500 mb-1">{f.label}</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              {f.label}
+            </label>
             <input
               name={f.name}
               value={form[f.name]}
@@ -67,7 +88,9 @@ function AddAddressForm({ onCancel }) {
                 ${errors[f.name] ? "border-red-400 bg-red-50" : "border-gray-200 bg-white"}`}
             />
             {errors[f.name] && (
-              <span className="text-xs text-red-500 mt-1 block">{errors[f.name]}</span>
+              <span className="text-xs text-red-500 mt-1 block">
+                {errors[f.name]}
+              </span>
             )}
           </div>
         ))}
@@ -101,7 +124,9 @@ function AddAddressForm({ onCancel }) {
               <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               Saving…
             </span>
-          ) : "Save & Use This Address"}
+          ) : (
+            "Save & Use This Address"
+          )}
         </button>
       </div>
     </div>
@@ -122,9 +147,11 @@ function AddressCard({ addr, isSelected, onSelect }) {
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-3">
           {/* Radio indicator */}
-          <span className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-            isSelected ? "border-gray-900" : "border-gray-300"
-          }`}>
+          <span
+            className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+              isSelected ? "border-gray-900" : "border-gray-300"
+            }`}
+          >
             {isSelected && (
               <span className="w-2 h-2 rounded-full bg-gray-900 block" />
             )}
@@ -155,24 +182,24 @@ export default function CheckoutPage() {
   const { items: cartItems } = useSelector((s) => s.cart);
   const { loading, error, success, currentOrder } = useSelector((s) => s.order);
   const { user } = useSelector((s) => s.auth);
-  const {
-    addresses,
-    addressesLoading,
-    addingAddress,
-    selectedAddress,
-  } = useSelector((s) => s.profile);
+  const { addresses, addressesLoading, addingAddress, selectedAddress } =
+    useSelector((s) => s.profile);
 
   const [showAddForm, setShowAddForm] = useState(false);
 
   // Guards
-  useEffect(() => { if (!user) navigate("/login"); }, [user, navigate]);
+  useEffect(() => {
+    if (!user) navigate("/login");
+  }, [user, navigate]);
   useEffect(() => {
     if (success && currentOrder) {
       sessionStorage.setItem("current_order_id", currentOrder._id);
       navigate("/checkout/payment");
     }
   }, [success, currentOrder, navigate]);
-  useEffect(() => { return () => dispatch(clearOrderError()); }, [dispatch]);
+  useEffect(() => {
+    return () => dispatch(clearOrderError());
+  }, [dispatch]);
 
   // Load saved addresses once
   useEffect(() => {
@@ -186,8 +213,26 @@ export default function CheckoutPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log("SELECTED ADDRESS:", JSON.stringify(selectedAddress));
     if (!selectedAddress) return;
-    dispatch(createOrder(selectedAddress));
+
+    if (!selectedAddress.pincode) {
+    dispatch(setToast({ 
+      msg: "This address is missing a pincode. Please delete it and add again.", 
+      type: "error" 
+    }));
+    return;
+  }
+
+    const shippingAddress = {
+      street: selectedAddress.street,
+      city: selectedAddress.city,
+      state: selectedAddress.state,
+      pincode: String(selectedAddress.pincode), 
+      country: selectedAddress.country,
+    };
+
+    dispatch(createOrder(shippingAddress));
   };
 
   // Empty cart guard
@@ -206,18 +251,22 @@ export default function CheckoutPage() {
   }
 
   const displayTotal = cartItems.reduce((sum, item) => {
-    const price = item.productId?.price?.amount ?? item.price?.amount ?? item.price ?? 0;
-    const qty   = item.qty ?? item.quantity ?? 1;
+    const price =
+      item.productId?.price?.amount ?? item.price?.amount ?? item.price ?? 0;
+    const qty = item.qty ?? item.quantity ?? 1;
     return sum + price * qty;
   }, 0);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10 flex flex-wrap gap-6 items-start">
-
       {/* ── Left: Address Selection ── */}
       <div className="flex-1 min-w-80 bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Delivery Address</h2>
-        <p className="text-sm text-gray-400 mb-6">Select a saved address or add a new one</p>
+        <h2 className="text-xl font-bold text-gray-900 mb-1">
+          Delivery Address
+        </h2>
+        <p className="text-sm text-gray-400 mb-6">
+          Select a saved address or add a new one
+        </p>
 
         {/* Error banner */}
         {error && (
@@ -294,18 +343,31 @@ export default function CheckoutPage() {
 
       {/* ── Right: Order Summary ── */}
       <div className="w-72 shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-5">
-        <h3 className="text-base font-bold text-gray-900 mb-4">Order Summary</h3>
+        <h3 className="text-base font-bold text-gray-900 mb-4">
+          Order Summary
+        </h3>
 
         <div className="space-y-3">
           {cartItems.map((item) => {
-            const name  = item.productId?.name ?? item.name ?? "Product";
-            const qty   = item.qty ?? item.quantity ?? 1;
-            const price = item.productId?.price?.amount ?? item.price?.amount ?? item.price ?? 0;
+            const name = item.productId?.name ?? item.name ?? "Product";
+            const qty = item.qty ?? item.quantity ?? 1;
+            const price =
+              item.productId?.price?.amount ??
+              item.price?.amount ??
+              item.price ??
+              0;
             return (
-              <div key={item._id} className="flex items-center justify-between gap-2">
+              <div
+                key={item._id}
+                className="flex items-center justify-between gap-2"
+              >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-sm text-gray-700 truncate max-w-36">{name}</span>
-                  <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded shrink-0">x{qty}</span>
+                  <span className="text-sm text-gray-700 truncate max-w-36">
+                    {name}
+                  </span>
+                  <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded shrink-0">
+                    x{qty}
+                  </span>
                 </div>
                 <span className="text-sm font-semibold text-gray-900 shrink-0">
                   ₹{(price * qty).toLocaleString("en-IN")}
@@ -324,9 +386,12 @@ export default function CheckoutPage() {
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                 Delivering to
               </p>
-              <p className="text-xs text-gray-700 font-medium">{selectedAddress.street}</p>
+              <p className="text-xs text-gray-700 font-medium">
+                {selectedAddress.street}
+              </p>
               <p className="text-xs text-gray-400">
-                {selectedAddress.city}, {selectedAddress.state} — {selectedAddress.pincode}
+                {selectedAddress.city}, {selectedAddress.state} —{" "}
+                {selectedAddress.pincode}
               </p>
             </div>
             <div className="border-t border-gray-100 my-4" />

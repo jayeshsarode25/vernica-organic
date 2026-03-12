@@ -116,7 +116,7 @@ export async function signUpVerifyOtp(req, res) {
         phone: user.phone,
         name: user.name,
         email: user.email,
-        role : user.role,
+        role: user.role,
         isPhoneVerified: user.isPhoneVerified,
       },
     });
@@ -318,7 +318,7 @@ export async function loginVerifyOtp(req, res) {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       message: "Login successful",
       user: {
         _id: user._id,
@@ -337,7 +337,7 @@ export async function loginVerifyOtp(req, res) {
   }
 }
 
-export async function resendOtp(req, res) {   
+export async function resendOtp(req, res) {
   try {
     const { phone, type } = req.body;
     const otpType = type || "login";
