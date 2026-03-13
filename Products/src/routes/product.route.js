@@ -23,11 +23,11 @@ router.patch('/:id', createAuthMiddleware(["admin"]), productCrontroller.updateP
 
 router.delete('/:id', createAuthMiddleware(["admin"]), productCrontroller.deleteProduct);
 
+router.get('/count',createAuthMiddleware(["admin"]), productCrontroller.getProductCount);
+
 //Products api
 
 router.get('/', productCrontroller.getProduct);
-
-router.get('/count',createAuthMiddleware(["admin"]), productCrontroller.getProductCount);
 
 router.get('/:id', productCrontroller.getProductById);
 

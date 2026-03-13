@@ -7,7 +7,7 @@ import {
   addAddress,
   setSelectedAddress,
   setToast,
-} from "../../redux/reducer/Profileslice"; // adjust path
+} from "../../redux/reducer/Profileslice"; 
 
 // ─── Inline Add Address Form ─────────────────────────────────────────────────
 function AddAddressForm({ onCancel }) {
@@ -233,6 +233,7 @@ export default function CheckoutPage() {
     };
 
     dispatch(createOrder(shippingAddress));
+    navigate("/checkout/payment")
   };
 
   // Empty cart guard

@@ -1,20 +1,28 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import {
+  sendSignupOtpApi,
+  verifySignupOtpApi,
+  sendLoginOtpApi,
+  verifyLoginOtpApi,
+  getMeApi,
+  getUsersApi,
+  getUserCountApi,
+  deleteUserApi,
+  blockUserApi,
+} from "../services/auth.services";
 
+// ─────────────────────────────────────────────
+// AUTH THUNKS
+// ─────────────────────────────────────────────
 
 export const sendSignupOtp = createAsyncThunk(
   "api/auth/sendSignupOtp",
   async (data, thunkApi) => {
     try {
-      const res = await axios.post(
-        "http://localhost:3000/api/auth/signup-phone",
-        data,{
-          withCredentials:true
-        }
-      );
+      const res = await sendSignupOtpApi(data);
       return { ...data, message: res.data.message };
     } catch (error) {
-      return thunkApi.rejectWithValue(error.response.data.message);
+      return thunkApi.rejectWithValue(error.response?.data?.message);
     }
   },
 );
@@ -23,19 +31,10 @@ export const verifySignupOtp = createAsyncThunk(
   "api/auth/verifySignupOtp",
   async ({ phone, otp, password }, thunkApi) => {
     try {
-      const res = await axios.post(
-        "http://localhost:3000/api/auth/verify-phone-otp",
-        {
-          phone,
-          otp,
-          password,
-        },{
-          withCredentials:true
-        }
-      );
+      const res = await verifySignupOtpApi({ phone, otp, password });
       return res.data;
     } catch (error) {
-      return thunkApi.rejectWithValue(error.response.data.message);
+      return thunkApi.rejectWithValue(error.response?.data?.message);
     }
   },
 );
@@ -44,14 +43,7 @@ export const sendLoginOtp = createAsyncThunk(
   "api/auth/sendLoginOtp",
   async (phone, thunkApi) => {
     try {
-      const res = await axios.post(
-        "http://localhost:3000/api/auth/login-phone",
-        { phone },
-        {
-          withCredentials:true
-        }
-      );
-
+      const res = await sendLoginOtpApi(phone);
       return { phone, message: res.data.message };
     } catch (error) {
       return thunkApi.rejectWithValue(
@@ -65,16 +57,7 @@ export const verifyLoginOtp = createAsyncThunk(
   "api/auth/verifyLoginOtp",
   async ({ phone, otp }, thunkApi) => {
     try {
-      const res = await axios.post(
-        "http://localhost:3000/api/auth/verify-login-otp",
-        {
-          phone,
-          otp,
-        },{
-          withCredentials: true
-        }
-      );
-      console.log("VERIFY LOGIN RESPONSE:", res.data);  
+      const res = await verifyLoginOtpApi(phone, otp);
       return res.data;
     } catch (error) {
       return thunkApi.rejectWithValue(
@@ -84,30 +67,89 @@ export const verifyLoginOtp = createAsyncThunk(
   },
 );
 
-export const getMe = createAsyncThunk(
-  "auth/getMe",
+export const getMe = createAsyncThunk("auth/getMe", async (_, thunkApi) => {
+  try {
+    const res = await getMeApi();
+    return res.data;
+  } catch (error) {
+    return thunkApi.rejectWithValue("Not authenticated");
+  }
+});
+
+// ─────────────────────────────────────────────
+// ADMIN USER MANAGEMENT THUNKS
+// ─────────────────────────────────────────────
+
+export const fetchUsers = createAsyncThunk(
+  "users/fetchAll",
   async (_, thunkApi) => {
     try {
-      const res = await axios.get(
-        "http://localhost:3000/api/auth/me",
-        { withCredentials: true }
-      );
-      return res.data; 
+      const res = await getUsersApi();
+      return res.data?.users ?? res.data;
     } catch (error) {
-      return thunkApi.rejectWithValue("Not authenticated");
+      return thunkApi.rejectWithValue(error.response?.data);
     }
-  }
+  },
 );
+
+export const fetchUserCount = createAsyncThunk(
+  "users/fetchCount",
+  async (_, thunkApi) => {
+    try {
+      const res = await getUserCountApi();
+      return res.data?.count ?? res.data;
+    } catch (error) {
+      return thunkApi.rejectWithValue(error.response?.data);
+    }
+  },
+);
+
+export const deleteUser = createAsyncThunk(
+  "users/delete",
+  async (id, thunkApi) => {
+    try {
+      await deleteUserApi(id);
+      return id;
+    } catch (error) {
+      return thunkApi.rejectWithValue(error.response?.data);
+    }
+  },
+);
+
+export const blockUser = createAsyncThunk(
+  "users/block",
+  async (id, thunkApi) => {
+    try {
+      await blockUserApi(id);
+      return id;
+    } catch (error) {
+      return thunkApi.rejectWithValue(error.response?.data);
+    }
+  },
+);
+
+// ─────────────────────────────────────────────
+// SLICE
+// ─────────────────────────────────────────────
 
 const authSlice = createSlice({
   name: "auth",
   initialState: {
+    // Auth state
     step: "idle",
     tempPhone: null,
     tempSignupData: null,
     user: null,
     loading: false,
     error: null,
+
+    // Admin user management state
+    users: {
+      items: [],
+      count: 0,
+      loading: false,
+      error: null,
+    },
   },
 
   reducers: {
@@ -127,9 +169,10 @@ const authSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
-
+      // sendSignupOtp
       .addCase(sendSignupOtp.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(sendSignupOtp.fulfilled, (state, action) => {
         state.loading = false;
@@ -141,20 +184,26 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+
+      // verifySignupOtp
       .addCase(verifySignupOtp.fulfilled, (state, action) => {
         state.user = action.payload.user;
         state.step = "authenticated";
       })
 
+      // sendLoginOtp
       .addCase(sendLoginOtp.fulfilled, (state, action) => {
         state.step = "loginOtpSent";
         state.tempPhone = action.payload.phone;
       })
 
+      // verifyLoginOtp
       .addCase(verifyLoginOtp.fulfilled, (state, action) => {
         state.user = action.payload.user;
         state.step = "authenticated";
       })
+
+      // getMe
       .addCase(getMe.pending, (state) => {
         state.loading = true;
       })
@@ -165,10 +214,44 @@ const authSlice = createSlice({
       .addCase(getMe.rejected, (state) => {
         state.loading = false;
         state.user = null;
+      })
+
+      // fetchUsers
+      .addCase(fetchUsers.pending, (state) => {
+        state.users.loading = true;
+        state.users.error = null;
+      })
+      .addCase(fetchUsers.fulfilled, (state, action) => {
+        state.users.loading = false;
+        state.users.items = Array.isArray(action.payload) ? action.payload : [];
+      })
+      .addCase(fetchUsers.rejected, (state, action) => {
+        state.users.loading = false;
+        state.users.error = action.payload?.message ?? "Failed to fetch users";
+      })
+
+      // fetchUserCount
+      .addCase(fetchUserCount.fulfilled, (state, action) => {
+        state.users.count = action.payload;
+      })
+
+      // deleteUser
+      .addCase(deleteUser.fulfilled, (state, action) => {
+        state.users.items = state.users.items.filter(
+          (u) => (u._id ?? u.userId ?? u.id) !== action.payload,
+        );
+        state.users.count = Math.max(0, state.users.count - 1);
+      })
+
+      // blockUser (toggle)
+      .addCase(blockUser.fulfilled, (state, action) => {
+        const found = state.users.items.find(
+          (u) => (u._id ?? u.userId ?? u.id) === action.payload,
+        );
+        if (found) found.isBlocked = !found.isBlocked;
       });
   },
 });
 
-export const { setCredentials, logout, clearError, resetFlow } =
-  authSlice.actions;
+export const { logout, clearError, resetFlow } = authSlice.actions;
 export default authSlice.reducer;
