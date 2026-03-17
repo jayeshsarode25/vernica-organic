@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import Home from "../pages/Home";
 import Products from "../pages/Products";
 import Login from "../pages/Login";
@@ -17,11 +17,11 @@ import Users from "../pages/admin/Users";
 import CheckoutPage from "../pages/order/CheckoutPage";
 import PaymentPage from "../pages/order/PaymentPage";
 
-
 const MainRoutes = () => {
   return (
     <div>
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/sign-up" element={<SignUp />} />
@@ -30,66 +30,48 @@ const MainRoutes = () => {
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/product" element={<Products />} />
         <Route path="/product/:id" element={<ProdectDetail />} />
-      
+
+        {/* User protected routes */}
         <Route
           path="/user-profile"
           element={
             <AuthRoute role="user">
-              < UserProfile/>
+              <UserProfile />
             </AuthRoute>
           }
         />
-
         <Route
           path="/checkout"
           element={
             <AuthRoute role="user">
-              < CheckoutPage/>
+              <CheckoutPage />
             </AuthRoute>
           }
         />
-
         <Route
           path="/checkout/payment"
           element={
             <AuthRoute role="user">
-              < PaymentPage/>
+              <PaymentPage />
             </AuthRoute>
           }
         />
 
+        {/* Admin protected routes — layout wraps once */}
         <Route
-          path="/admin/dashboard"
+          path="/admin"
           element={
             <AuthRoute role="admin">
-              <AdminLayout>
-                <Dashboard />
-              </AdminLayout>
+              <AdminLayout />
             </AuthRoute>
           }
-        />
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="users" element={<Users />} />
+        </Route>
 
-        <Route
-          path="/admin/products"
-          element={
-            <AuthRoute role="admin">
-              <AdminLayout>
-                <AdminProducts />
-              </AdminLayout>
-            </AuthRoute>
-          }
-        />
-
-        <Route
-          path="/admin/users"
-          element={
-            <AuthRoute role="admin">
-              <AdminLayout>
-                <Users />
-              </AdminLayout>
-            </AuthRoute>
-          }
-        />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </div>

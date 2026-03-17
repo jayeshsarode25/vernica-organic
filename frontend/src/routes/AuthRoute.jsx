@@ -12,9 +12,9 @@ const AuthRoute = ({ children, role }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (role && user.role !== role) {
-    return <Navigate to="/" replace />;
-  }
+  if (role && user.role !== role && user.role !== "admin") {
+  return <Navigate to="/" replace />;
+}
 
   return children;
 };

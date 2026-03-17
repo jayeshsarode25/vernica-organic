@@ -81,7 +81,7 @@ export const productCount = createAsyncThunk(
   async (_, thunkApi) => {
     try {
       const res = await countProductApi();
-      return res.data?.count ?? res.data;
+      return res.data.totalProducts;
     } catch (error) {
       return thunkApi.rejectWithValue(error.response?.data);
     }

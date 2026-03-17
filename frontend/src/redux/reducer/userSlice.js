@@ -97,7 +97,7 @@ export const fetchUserCount = createAsyncThunk(
   async (_, thunkApi) => {
     try {
       const res = await getUserCountApi();
-      return res.data?.count ?? res.data;
+      return res.data.totalUser;
     } catch (error) {
       return thunkApi.rejectWithValue(error.response?.data);
     }

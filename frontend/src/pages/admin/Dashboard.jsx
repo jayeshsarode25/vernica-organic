@@ -22,7 +22,7 @@ const StatCard = ({ label, value, loading, iconBg, icon }) => (
 const Dashboard = () => {
   const dispatch = useDispatch();
 
-  const { total: productTotal, loading: productLoading } = useSelector((s) => s.admin);
+  const { admin: { total: productTotal }, loading: productLoading } = useSelector((s) => s.products);
   // ✅ state.auth.users — nested inside authSlice
   const { count: userCount, items: userItems, loading: userLoading } = useSelector(
     (s) => s.auth.users,
