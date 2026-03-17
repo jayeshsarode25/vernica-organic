@@ -16,6 +16,7 @@ import AdminProducts from "../pages/admin/AdminProducts";
 import Users from "../pages/admin/Users";
 import CheckoutPage from "../pages/order/CheckoutPage";
 import PaymentPage from "../pages/order/PaymentPage";
+import Orders from "../pages/admin/Orders";
 
 const MainRoutes = () => {
   return (
@@ -69,6 +70,7 @@ const MainRoutes = () => {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="products" element={<AdminProducts />} />
+          <Route path="orders" element={<Orders />} />
           <Route path="users" element={<Users />} />
         </Route>
 

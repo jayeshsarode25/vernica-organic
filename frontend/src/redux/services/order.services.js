@@ -11,19 +11,27 @@ const orderApi = axios.create({
 
 export const createOrderApi = (shippingAddress) =>
   orderApi.post("/", { shippingAddress });
-
+ 
 export const getMyOrdersApi = () => orderApi.get("/me");
-
+ 
 export const getOrderByIdApi = (orderId) => orderApi.get(`/${orderId}`);
-
+ 
 export const updateOrderAddressApi = (orderId, shippingAddress) =>
   orderApi.patch(`/${orderId}/address`, { shippingAddress });
-
-export const cancelOrderApi = (orderId) => orderApi.post(`/${orderId}/cancel`);
-
-export const getAllOrdersApi = () => orderApi.get("/all_orders");
-
+ 
+export const cancelOrderApi = (orderId) => 
+  orderApi.post(`/${orderId}/cancel`);
+ 
+export const getAllOrdersApi = (params = {}) => {
+  // Build query string from params
+  const queryString = new URLSearchParams(params).toString();
+  const url = queryString ? `/all_orders?${queryString}` : "/all_orders";
+  return orderApi.get(url);
+};
+ 
 export const updateOrderStatusApi = (orderId, status) =>
   orderApi.patch(`/${orderId}`, { status });
-
-export const getDashboardApi = () => orderApi.get("/dashbord");
+ 
+export const getDashboardApi = () => 
+  orderApi.get("/dashbord"); // Note: Keep the typo to match backend
+ 

@@ -7,7 +7,10 @@ import {
   getOrderByIdApi,
   updateOrderAddressApi,
   updateOrderStatusApi,
+  getDashboardApi,
 } from "../services/order.services";
+
+// ========== ASYNC THUNKS ==========
 
 export const createOrder = createAsyncThunk(
   "order/create",
@@ -16,12 +19,12 @@ export const createOrder = createAsyncThunk(
       const res = await createOrderApi(shippingAddress);
       return res.data;
     } catch (error) {
+      console.log("ORDER ERROR RESPONSE:", error.response?.data);
       return thunkApi.rejectWithValue(
-        console.log("ORDER ERROR RESPONSE:", error.response?.data),
-        error.response?.data?.message || "Failed to create order",
+        error.response?.data?.message || "Failed to create order"
       );
     }
-  },
+  }
 );
 
 export const getMyOrders = createAsyncThunk(
@@ -32,10 +35,10 @@ export const getMyOrders = createAsyncThunk(
       return res.data;
     } catch (error) {
       return thunkApi.rejectWithValue(
-        error.response?.data?.message || "Failed to create order",
+        error.response?.data?.message || "Failed to fetch your orders"
       );
     }
-  },
+  }
 );
 
 export const getOrderById = createAsyncThunk(
@@ -46,10 +49,10 @@ export const getOrderById = createAsyncThunk(
       return res.data;
     } catch (error) {
       return thunkApi.rejectWithValue(
-        error.response?.data?.message || "Failed to create order",
+        error.response?.data?.message || "Failed to fetch order"
       );
     }
-  },
+  }
 );
 
 export const updateOrderAddress = createAsyncThunk(
@@ -60,10 +63,10 @@ export const updateOrderAddress = createAsyncThunk(
       return res.data;
     } catch (error) {
       return thunkApi.rejectWithValue(
-        error.response?.data?.message || "Failed to create order",
+        error.response?.data?.message || "Failed to update address"
       );
     }
-  },
+  }
 );
 
 export const cancelOrder = createAsyncThunk(
@@ -74,24 +77,24 @@ export const cancelOrder = createAsyncThunk(
       return res.data;
     } catch (error) {
       return thunkApi.rejectWithValue(
-        error.response?.data?.message || "Failed to create order",
+        error.response?.data?.message || "Failed to cancel order"
       );
     }
-  },
+  }
 );
 
 export const getAllOrders = createAsyncThunk(
   "order/getAll",
-  async (_, thunkApi) => {
+  async (params = {}, thunkApi) => {
     try {
-      const res = await getAllOrdersApi();
+      const res = await getAllOrdersApi(params);
       return res.data;
     } catch (error) {
       return thunkApi.rejectWithValue(
-        error.response?.data?.message || "Failed to create order",
+        error.response?.data?.message || "Failed to fetch orders"
       );
     }
-  },
+  }
 );
 
 export const updateOrderStatus = createAsyncThunk(
@@ -102,11 +105,27 @@ export const updateOrderStatus = createAsyncThunk(
       return res.data;
     } catch (error) {
       return thunkApi.rejectWithValue(
-        error.response?.data?.message || "Failed to update status",
+        error.response?.data?.message || "Failed to update status"
       );
     }
-  },
+  }
 );
+
+export const getDashboard = createAsyncThunk(
+  "order/getDashboard",
+  async (_, thunkApi) => {
+    try {
+      const res = await getDashboardApi();
+      return res.data;
+    } catch (error) {
+      return thunkApi.rejectWithValue(
+        error.response?.data?.message || "Failed to fetch dashboard data"
+      );
+    }
+  }
+);
+
+// ========== SLICE ==========
 
 const orderSlice = createSlice({
   name: "order",
@@ -114,10 +133,17 @@ const orderSlice = createSlice({
     currentOrder: null,
     myOrders: [],
     allOrders: [],
+    dashboardData: null,
     loading: false,
     actionLoading: false,
     error: null,
-    succcess: false,
+    success: false,
+    pagination: {
+      page: 1,
+      limit: 10,
+      totalPages: 1,
+      totalOrders: 0,
+    },
   },
   reducers: {
     clearOrderError: (state) => {
@@ -125,75 +151,106 @@ const orderSlice = createSlice({
     },
     clearCurrentOrder: (state) => {
       state.currentOrder = null;
-      state.succcess = false;
+      state.success = false;
     },
     resetOrderSuccess: (state) => {
-      state.succcess = false;
+      state.success = false;
+    },
+    setPagination: (state, action) => {
+      state.pagination = { ...state.pagination, ...action.payload };
     },
   },
   extraReducers: (builder) => {
+    // CREATE ORDER
     builder
       .addCase(createOrder.pending, (state) => {
         state.loading = true;
         state.error = null;
-        state.succcess = false;
+        state.success = false;
       })
       .addCase(createOrder.fulfilled, (state, action) => {
         state.loading = false;
-        state.succcess = true;
-        state.currentOrder = action.payload.order ?? action.payload;
+        state.success = true;
+        // Handle both nested and flat response structures
+        const orderData = action.payload.order || action.payload;
+        state.currentOrder = orderData;
       })
       .addCase(createOrder.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
+        state.success = false;
+      });
+
+    // GET MY ORDERS
+    builder
       .addCase(getMyOrders.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(getMyOrders.fulfilled, (state, action) => {
         state.loading = false;
-        const data = action.payload.order;
+        const data = action.payload.order || action.payload.orders || action.payload;
         state.myOrders = Array.isArray(data) ? data : data ? [data] : [];
       })
       .addCase(getMyOrders.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
+      });
+
+    // GET ORDER BY ID
+    builder
       .addCase(getOrderById.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(getOrderById.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentOrder = action.payload.order ?? action.payload;
+        const orderData = action.payload.order || action.payload;
+        state.currentOrder = orderData;
       })
       .addCase(getOrderById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
+      });
+
+    // UPDATE ORDER ADDRESS
+    builder
       .addCase(updateOrderAddress.pending, (state) => {
         state.actionLoading = true;
         state.error = null;
       })
       .addCase(updateOrderAddress.fulfilled, (state, action) => {
         state.actionLoading = false;
-        state.currentOrder = action.payload.order ?? action.payload;
+        const orderData = action.payload.order || action.payload;
+        state.currentOrder = orderData;
+        // Update in myOrders list if exists
+        state.myOrders = state.myOrders.map((o) =>
+          o._id === orderData._id ? orderData : o
+        );
       })
       .addCase(updateOrderAddress.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload;
-      })
+      });
+
+    // CANCEL ORDER
+    builder
       .addCase(cancelOrder.pending, (state) => {
         state.actionLoading = true;
         state.error = null;
       })
       .addCase(cancelOrder.fulfilled, (state, action) => {
         state.actionLoading = false;
-        const updated = action.payload.order ?? action.payload;
+        const updated = action.payload.order || action.payload;
+        // Update in myOrders
         state.myOrders = state.myOrders.map((o) =>
-          o._id === updated._id ? updated : o,
+          o._id === updated._id ? updated : o
         );
+        // Update in allOrders
+        state.allOrders = state.allOrders.map((o) =>
+          o._id === updated._id ? updated : o
+        );
+        // Update current order if it's the one being cancelled
         if (state.currentOrder?._id === updated._id) {
           state.currentOrder = updated;
         }
@@ -201,27 +258,90 @@ const orderSlice = createSlice({
       .addCase(cancelOrder.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload;
-      })
-      .addCase(getAllOrders.pending, (state, action) => {
+      });
+
+    // GET ALL ORDERS (Admin)
+    builder
+      .addCase(getAllOrders.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(getAllOrders.fulfilled, (state, action) => {
         state.loading = false;
-        state.allOrders = action.payload.orders ?? action.payload ?? [];
+        const payload = action.payload;
+        
+        // Handle paginated response
+        if (payload.data) {
+          state.allOrders = payload.data;
+          state.pagination = {
+            page: payload.page || 1,
+            limit: payload.limit || 10,
+            totalPages: payload.totalPages || 1,
+            totalOrders: payload.totalOrders || payload.data.length,
+          };
+        } else {
+          // Handle non-paginated response
+          state.allOrders = Array.isArray(payload) ? payload : payload.orders || [];
+        }
       })
       .addCase(getAllOrders.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.allOrders = [];
+      });
+
+    // UPDATE ORDER STATUS
+    builder
+      .addCase(updateOrderStatus.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
       })
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
-        const updated = action.payload.order ?? action.payload;
+        state.actionLoading = false;
+        const updated = action.payload.order || action.payload;
+        
+        // Update in allOrders
         state.allOrders = state.allOrders.map((o) =>
-          o._id === updated._id ? updated : o,
+          o._id === updated._id ? updated : o
         );
+        
+        // Update in myOrders
+        state.myOrders = state.myOrders.map((o) =>
+          o._id === updated._id ? updated : o
+        );
+        
+        // Update current order
+        if (state.currentOrder?._id === updated._id) {
+          state.currentOrder = updated;
+        }
+      })
+      .addCase(updateOrderStatus.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload;
+      });
+
+    // GET DASHBOARD
+    builder
+      .addCase(getDashboard.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getDashboard.fulfilled, (state, action) => {
+        state.loading = false;
+        state.dashboardData = action.payload;
+      })
+      .addCase(getDashboard.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { clearOrderError, clearCurrentOrder, resetOrderSuccess } =
-  orderSlice.actions;
+export const {
+  clearOrderError,
+  clearCurrentOrder,
+  resetOrderSuccess,
+  setPagination,
+} = orderSlice.actions;
+
 export default orderSlice.reducer;

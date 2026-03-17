@@ -1,12 +1,14 @@
-import { Outlet } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "../redux/reducer/userSlice"; // Adjust path to your auth slice
+import { logout } from "../../redux/reducer/userSlice"; // Adjust path
 import { useNavigate } from "react-router-dom";
-import { LogOut, ChevronDown } from "lucide-react";
+import { LogOut, Menu, X, ChevronDown } from "lucide-react";
 import { useState } from "react";
-import Sidebar from "../components/admin/Sidebar";
 
-const AdminLayout = () => {
+/**
+ * TopBar Component - Add this to your existing AdminLayout
+ * Place it above the <Outlet /> and below the Sidebar
+ */
+const TopBar = ({ onMenuToggle, mobileMenuOpen }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -16,10 +18,10 @@ const AdminLayout = () => {
   const { user } = useSelector((state) => state.auth);
 
   const handleLogout = () => {
-    // Dispatch logout action
+    // Dispatch logout action to Redux
     dispatch(logout());
 
-    // Clear localStorage
+    // Clear local storage
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
@@ -29,30 +31,41 @@ const AdminLayout = () => {
 
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || "A";
   const userName = user?.name || "Admin User";
-  const userEmail = user?.email || "admin@example.com";
+  const userEmail = user?.phone || "admin@example.com";
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <main className="flex-1 flex flex-col">
-        {/* Top Bar with User & Logout */}
-        <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-end">
+    <>
+      {/* Top Bar */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+        {/* Left: Mobile Menu Button */}
+        <button
+          onClick={onMenuToggle}
+          className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          {mobileMenuOpen ? (
+            <X size={24} className="text-gray-600" />
+          ) : (
+            <Menu size={24} className="text-gray-600" />
+          )}
+        </button>
+
+        {/* Right: User Profile & Logout */}
+        <div className="ml-auto flex items-center gap-4">
           {/* User Profile Dropdown */}
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
+              className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
             >
               {/* Avatar */}
               <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                 {userInitial}
               </div>
 
-              {/* User Info */}
-              <div className="text-left">
+              {/* User Info - Hidden on mobile */}
+              <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium text-gray-900">{userName}</p>
-                <p className="text-xs text-gray-600">{userEmail}</p>
+                <p className="text-xs text-gray-500">{userEmail}</p>
               </div>
 
               {/* Chevron */}
@@ -98,13 +111,18 @@ const AdminLayout = () => {
               </div>
             )}
           </div>
-        </div>
 
-        {/* Page Content */}
-        <div className="flex-1 p-8 overflow-y-auto">
-          <Outlet />
+          {/* Direct Logout Button (Alternative) */}
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            className="hidden sm:flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 px-4 py-2 rounded-lg font-medium transition-colors border border-red-200"
+            title="Logout"
+          >
+            <LogOut size={18} />
+            <span className="hidden md:inline">Logout</span>
+          </button>
         </div>
-      </main>
+      </div>
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
@@ -144,8 +162,8 @@ const AdminLayout = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
-export default AdminLayout;
+export default TopBar;
