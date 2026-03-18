@@ -7,7 +7,7 @@ import {
   addAddress,
   setSelectedAddress,
   setToast,
-} from "../../redux/reducer/Profileslice"; 
+} from "../../redux/reducer/Profileslice";
 
 // ─── Inline Add Address Form ─────────────────────────────────────────────────
 function AddAddressForm({ onCancel }) {
@@ -187,16 +187,20 @@ export default function CheckoutPage() {
 
   const [showAddForm, setShowAddForm] = useState(false);
 
-  // Guards
+  // Guard: user must be logged in
   useEffect(() => {
     if (!user) navigate("/login");
   }, [user, navigate]);
+
+  // Guard: when order is created, navigate to payment
   useEffect(() => {
     if (success && currentOrder) {
       sessionStorage.setItem("current_order_id", currentOrder._id);
-      navigate("/checkout/payment");
+      navigate("/checkout/payment", { replace: false }); // Allow back navigation FROM payment
     }
   }, [success, currentOrder, navigate]);
+
+  // Clear errors on unmount
   useEffect(() => {
     return () => dispatch(clearOrderError());
   }, [dispatch]);
@@ -213,27 +217,36 @@ export default function CheckoutPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("SELECTED ADDRESS:", JSON.stringify(selectedAddress));
-    if (!selectedAddress) return;
+
+    if (!selectedAddress) {
+      dispatch(
+        setToast({
+          msg: "Please select a delivery address",
+          type: "error",
+        })
+      );
+      return;
+    }
 
     if (!selectedAddress.pincode) {
-    dispatch(setToast({ 
-      msg: "This address is missing a pincode. Please delete it and add again.", 
-      type: "error" 
-    }));
-    return;
-  }
+      dispatch(
+        setToast({
+          msg: "This address is missing a pincode. Please delete it and add again.",
+          type: "error",
+        })
+      );
+      return;
+    }
 
     const shippingAddress = {
       street: selectedAddress.street,
       city: selectedAddress.city,
       state: selectedAddress.state,
-      pincode: String(selectedAddress.pincode), 
+      pincode: String(selectedAddress.pincode),
       country: selectedAddress.country,
     };
 
     dispatch(createOrder(shippingAddress));
-    navigate("/checkout/payment")
   };
 
   // Empty cart guard

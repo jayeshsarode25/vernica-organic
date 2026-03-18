@@ -23,14 +23,17 @@ export const createPayment = async (req, res) => {
 
     const price = orderResponce.data.order.totalPrice;
 
-    const order = await razorpay.orders.create(price);
+    const order = await razorpay.orders.create({
+      amount: price.amount * 100, 
+      currency: price.currency,
+    });
 
     const newPayment = await paymentModel.create({
       order: orderId,
       razorpayOrderId: order.id,
       user: userId,
       price: {
-        amount: order.amount,
+        amount: order.amount, 
         currency: order.currency,
       },
     });
@@ -81,7 +84,6 @@ export const verifyPayment = async (req, res) => {
     res.status(500).json({ message: "Internal server Error" });
   }
 };
-
 
 // export const generateTestSignature = (req, res) => {
 //   const { razorpayOrderId, paymentId } = req.body;

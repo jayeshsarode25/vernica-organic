@@ -1,11 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { createPayment, verifyPayment, resetPayment } from "../../redux/reducer/paymentSlice";
+import {
+  createPayment,
+  verifyPayment,
+  resetPayment,
+} from "../../redux/reducer/paymentSlice";
 import { clearCurrentOrder } from "../../redux/reducer/orderSlice";
 import { clearCart } from "../../redux/reducer/cartSlice";
 
-// ─── Load Razorpay Script ──────────────────────────────────────
 const loadRazorpayScript = () =>
   new Promise((resolve) => {
     if (window.Razorpay) return resolve(true);
@@ -24,45 +27,128 @@ export default function PaymentPage() {
   const { currentOrder } = useSelector((state) => state.order);
   const { status, error } = useSelector((state) => state.payment);
 
+  const isMountedRef = useRef(true);
+  const hasOpenedRef = useRef(false);
+
   const orderId =
     currentOrder?._id ?? sessionStorage.getItem("current_order_id");
 
-  // ── Guards ────────────────────────────────────────────────
+  // Cleanup on unmount
   useEffect(() => {
-    if (!user) navigate("/login");
-  }, [user, navigate]);
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
+  // Reset payment slice on unmount
   useEffect(() => {
-    if (!orderId) navigate("/checkout");
-  }, [orderId, navigate]);
-
-  // ── Auto-trigger Razorpay when page loads ─────────────────
-  useEffect(() => {
-    if (orderId && user) {
-      handlePayNow();
-    }
-  }, []); // runs once on mount
-
-  // ── Cleanup on unmount ────────────────────────────────────
-  useEffect(() => {
-    return () => dispatch(resetPayment());
+    return () => {
+      dispatch(resetPayment());
+    };
   }, [dispatch]);
 
-  // ── Main handler ──────────────────────────────────────────
-  const handlePayNow = async () => {
-    const loaded = await loadRazorpayScript();
-    if (!loaded) {
-      alert("Failed to load Razorpay. Check your internet connection.");
+  // Initial validation and payment opening
+  useEffect(() => {
+    // Guard: user must be logged in
+    if (!user) {
+      navigate("/login", { replace: true });
       return;
     }
 
-    // Step 1 — create payment on backend
+    // Guard: must have an order
+    if (!orderId) {
+      navigate("/checkout", { replace: true });
+      return;
+    }
+
+    // Prevent multiple opens
+    if (hasOpenedRef.current) {
+      return;
+    }
+
+    hasOpenedRef.current = true;
+    openRazorpay();
+  }, [user, orderId, navigate]);
+
+  const handleDismiss = () => {
+    if (!isMountedRef.current) return;
+
+    // Clear all state BEFORE navigation
+    dispatch(resetPayment());
+    sessionStorage.removeItem("current_order_id");
+    dispatch(clearCurrentOrder());
+
+    // Navigate AFTER clearing state
+    navigate("/checkout", { replace: true });
+  };
+
+  const handlePaymentSuccess = async (response) => {
+    if (!isMountedRef.current) return;
+
+    const verifyResult = await dispatch(
+      verifyPayment({
+        razorpayOrderId: response.razorpay_order_id,
+        paymentId: response.razorpay_payment_id,
+        signature: response.razorpay_signature,
+      })
+    );
+
+    if (!isMountedRef.current) return;
+
+    if (verifyPayment.fulfilled.match(verifyResult)) {
+      // Clear everything
+      dispatch(clearCart());
+      dispatch(clearCurrentOrder());
+      sessionStorage.removeItem("current_order_id");
+
+      // Navigate to success
+      navigate(`/order/success/${orderId}`, { replace: true });
+    }
+  };
+
+  const handlePaymentFailed = (response) => {
+    if (!isMountedRef.current) return;
+
+    // Clear state on failure
+    dispatch(resetPayment());
+    dispatch(clearCurrentOrder());
+    sessionStorage.removeItem("current_order_id");
+
+    // Navigate to error page
+    navigate("/order/failed", {
+      state: { reason: response.error.description },
+      replace: true,
+    });
+  };
+
+  const openRazorpay = async () => {
+    if (!isMountedRef.current) return;
+
+    // Load script
+    const loaded = await loadRazorpayScript();
+    if (!loaded) {
+      if (!isMountedRef.current) return;
+      alert("Failed to load Razorpay. Please try again.");
+      dispatch(resetPayment());
+      navigate("/checkout", { replace: true });
+      return;
+    }
+
+    if (!isMountedRef.current) return;
+
+    // Create payment
     const result = await dispatch(createPayment(orderId));
-    if (createPayment.rejected.match(result)) return;
+
+    if (!isMountedRef.current) return;
+
+    if (createPayment.rejected.match(result)) {
+      return;
+    }
+
+    if (!isMountedRef.current) return;
 
     const { razorpayOrderId, price } = result.payload.newPayment;
 
-    // Step 2 — open Razorpay modal (Razorpay handles method selection)
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
       amount: price.amount,
@@ -76,91 +162,90 @@ export default function PaymentPage() {
         contact: user?.phone ?? "",
       },
       theme: { color: "#111111" },
-
-      // ── Payment success ──
-      handler: async (response) => {
-        const verifyResult = await dispatch(
-          verifyPayment({
-            razorpayOrderId: response.razorpay_order_id,
-            paymentId: response.razorpay_payment_id,
-            signature: response.razorpay_signature,
-          })
-        );
-        if (verifyPayment.fulfilled.match(verifyResult)) {
-          dispatch(clearCart());
-          dispatch(clearCurrentOrder());
-          sessionStorage.removeItem("current_order_id");
-          navigate(`/order/success/${orderId}`);
-        }
+      handler: (response) => {
+        handlePaymentSuccess(response);
       },
-
       modal: {
-        // User closed Razorpay modal — go back to checkout
         ondismiss: () => {
-          dispatch(resetPayment());
-          navigate("/checkout");
+          handleDismiss();
         },
       },
     };
 
     const rzp = new window.Razorpay(options);
+
     rzp.on("payment.failed", (response) => {
-      dispatch(resetPayment());
-      navigate("/order/failed", { state: { reason: response.error.description } });
+      handlePaymentFailed(response);
     });
+
     rzp.open();
   };
 
   const isLoading = status === "initiating" || status === "verifying";
 
-  // ── Render — shown briefly while Razorpay loads ───────────
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="flex flex-col items-center gap-5 text-center">
+      <div className="flex flex-col items-center gap-5 text-center max-w-sm w-full">
+        {/* Price Summary */}
+        {currentOrder?.totalPrice && (
+          <div className="w-full bg-white border border-gray-100 rounded-xl px-6 py-4 shadow-sm">
+            <p className="text-sm text-gray-400 mb-1">Price Summary</p>
+            <p className="text-2xl font-bold text-gray-900">
+              ₹{currentOrder.totalPrice.amount?.toLocaleString("en-IN")}
+            </p>
+          </div>
+        )}
 
-        {/* Loading / verifying state */}
+        {/* Loading State */}
         {!error && (
           <>
             <span className="w-12 h-12 border-4 border-gray-200 border-t-gray-800 rounded-full animate-spin" />
             <div>
               <p className="text-base font-semibold text-gray-800">
                 {status === "verifying"
-                  ? "Verifying your payment…"
-                  : "Opening Razorpay…"}
+                  ? "Verifying payment…"
+                  : "Opening payment gateway…"}
               </p>
-              <p className="text-sm text-gray-400 mt-1">Please wait, do not refresh</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Please wait, do not refresh
+              </p>
             </div>
           </>
         )}
 
-        {/* Error state — show retry button */}
+        {/* Error State */}
         {error && (
           <>
             <span className="text-4xl">⚠️</span>
-            <div>
-              <p className="text-base font-semibold text-gray-800">Payment initiation failed</p>
-              <p className="text-sm text-red-500 mt-1">{error}</p>
-            </div>
-            <div className="flex gap-3 mt-2">
+            <p className="text-base font-semibold text-gray-800">
+              Payment failed
+            </p>
+            <p className="text-sm text-red-500">{error}</p>
+            <div className="flex gap-3">
               <button
-                onClick={handlePayNow}
+                onClick={() => {
+                  hasOpenedRef.current = false;
+                  dispatch(resetPayment());
+                  openRazorpay();
+                }}
                 disabled={isLoading}
-                className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-lg
-                           hover:bg-gray-700 transition-colors disabled:opacity-60"
+                className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold
+                           rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-60"
               >
-                Retry Payment
+                Retry
               </button>
               <button
-                onClick={() => navigate("/checkout")}
-                className="px-6 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium
-                           rounded-lg hover:bg-gray-50 transition-colors"
+                onClick={() => {
+                  handleDismiss();
+                }}
+                className="px-6 py-2.5 border border-gray-200 text-gray-600 text-sm
+                           font-medium rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Go Back
               </button>
             </div>
           </>
         )}
-
       </div>
     </div>
   );
