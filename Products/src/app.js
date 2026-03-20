@@ -1,6 +1,7 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import productRoutes from './routes/product.route.js'
+import categoryRoute from './routes/Category.routes.js'
 import cors from 'cors'
 
 
@@ -24,8 +25,13 @@ app.get('/', (req, res) => {
     });
 });
 
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
+
 
 app.use('/api/products', productRoutes)
+app.use("/api/categories", categoryRoute);
 
 
 export default app;

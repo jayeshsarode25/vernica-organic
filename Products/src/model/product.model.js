@@ -35,9 +35,32 @@ const productSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  // ⭐ NEW: Category Reference
+  categoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "category",
+    required: [true, "Product must belong to a category"],
+  },
+  // Optional: Add rating for featured products section
+  rating: {
+    type: Number,
+    default: 0,
+    min: [0, "Rating cannot be less than 0"],
+    max: [5, "Rating cannot exceed 5"],
+  },
+  reviewCount: {
+    type: Number,
+    default: 0,
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 productSchema.index({ title: "text", description: "text" });
+productSchema.index({ categoryId: 1 }); // Index for category queries
+productSchema.index({ isActive: 1 }); // Index for active products
 
 const productModel = mongoose.model("product", productSchema);
 

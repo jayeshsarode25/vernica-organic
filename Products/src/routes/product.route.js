@@ -1,7 +1,10 @@
 import express from "express";
 import upload from "../middleware/multer.js";
 import * as productCrontroller from "../controller/product.controller.js";
-import createProductValidators from '../middleware/product.middleware.js'
+import {
+  createProductValidators,
+  updateProductValidators,
+} from "../middleware/product.middleware.js";
 import createAuthMiddleware from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -12,24 +15,49 @@ router.post(
   "/",
   createAuthMiddleware(["admin"]),
   upload.fields([
-    { name: "imagesUrls", maxCount: 2 }, 
-    { name: "videoUrl", maxCount: 1 },     
+    { name: "imagesUrls", maxCount: 2 },
+    { name: "videoUrl", maxCount: 1 },
   ]),
-  createProductValidators,
-  productCrontroller.createProduct
+  createProductValidators, // ⭐ WITH CATEGORY VALIDATION
+  productCrontroller.createProduct,
 );
 
-router.patch('/:id', createAuthMiddleware(["admin"]), productCrontroller.updateProduct);
+// Update product
+router.patch(
+  "/:id",
+  createAuthMiddleware(["admin"]),
+  updateProductValidators, // ⭐ WITH CATEGORY VALIDATION
+  productCrontroller.updateProduct,
+);
 
-router.delete('/:id', createAuthMiddleware(["admin"]), productCrontroller.deleteProduct);
+// Delete product
+router.delete(
+  "/:id",
+  createAuthMiddleware(["admin"]),
+  productCrontroller.deleteProduct,
+);
 
-router.get('/count',createAuthMiddleware(["admin"]), productCrontroller.getProductCount);
+// Get product count (with category breakdown)
+router.get(
+  "/count",
+  createAuthMiddleware(["admin"]),
+  productCrontroller.getProductCount,
+);
 
-//Products api
+// ====================================
+// PUBLIC ROUTES
+// ====================================
 
-router.get('/', productCrontroller.getProduct);
+// Get all products with optional filters by category, price, search
+router.get("/", productCrontroller.getProduct);
 
-router.get('/:id', productCrontroller.getProductById);
+router.get("/category/:categoryId", productCrontroller.getProductsByCategory);
 
+router.get(
+  "/category-slug/:slug",
+  productCrontroller.getProductsByCategorySlug,
+);
+
+router.get("/:id", productCrontroller.getProductById);
 
 export default router;
