@@ -1,6 +1,6 @@
 import express from "express";
 import upload from "../middleware/multer.js";
-import * as productCrontroller from "../controller/product.controller.js";
+import * as productController  from "../controller/product.controller.js";
 import {
   createProductValidators,
   updateProductValidators,
@@ -9,8 +9,19 @@ import createAuthMiddleware from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-//Admin api
+router.get("/", productController.getProduct);
 
+// Get products by category ID
+router.get("/category/:categoryId", productController.getProductsByCategory);
+
+// Get products by category slug
+router.get("/category-slug/:slug", productController.getProductsByCategorySlug);
+
+// ====================================
+// ADMIN ROUTES (With Auth)
+// ====================================
+
+// Create product
 router.post(
   "/",
   createAuthMiddleware(["admin"]),
@@ -18,46 +29,33 @@ router.post(
     { name: "imagesUrls", maxCount: 2 },
     { name: "videoUrl", maxCount: 1 },
   ]),
-  createProductValidators, // ⭐ WITH CATEGORY VALIDATION
-  productCrontroller.createProduct,
+  createProductValidators,
+  productController.createProduct
 );
 
 // Update product
 router.patch(
   "/:id",
   createAuthMiddleware(["admin"]),
-  updateProductValidators, // ⭐ WITH CATEGORY VALIDATION
-  productCrontroller.updateProduct,
+  updateProductValidators,
+  productController.updateProduct
 );
 
 // Delete product
 router.delete(
   "/:id",
   createAuthMiddleware(["admin"]),
-  productCrontroller.deleteProduct,
+  productController.deleteProduct
 );
 
-// Get product count (with category breakdown)
+// Get product count (admin only)
 router.get(
   "/count",
   createAuthMiddleware(["admin"]),
-  productCrontroller.getProductCount,
+  productController.getProductCount
 );
 
-// ====================================
-// PUBLIC ROUTES
-// ====================================
-
-// Get all products with optional filters by category, price, search
-router.get("/", productCrontroller.getProduct);
-
-router.get("/category/:categoryId", productCrontroller.getProductsByCategory);
-
-router.get(
-  "/category-slug/:slug",
-  productCrontroller.getProductsByCategorySlug,
-);
-
-router.get("/:id", productCrontroller.getProductById);
+// Get single product by ID (MUST BE LAST)
+router.get("/:id", productController.getProductById);
 
 export default router;

@@ -48,10 +48,11 @@ categorySchema.pre("save", function (next) {
   next();
 });
 
-// Index for faster queries
+// Indexes for faster queries
 categorySchema.index({ slug: 1 });
 categorySchema.index({ isActive: 1 });
 
+// Create and export model
 const categoryModel = mongoose.model("category", categorySchema);
 
 export default categoryModel;

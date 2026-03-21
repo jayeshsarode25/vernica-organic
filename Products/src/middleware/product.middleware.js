@@ -1,9 +1,9 @@
 import { body, validationResult } from "express-validator";
 import categoryModel from "../model/category.model.js";
 
-function handleValidationErrors(req, res, next) {
+const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
-
+  
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
@@ -14,9 +14,9 @@ function handleValidationErrors(req, res, next) {
       })),
     });
   }
-
-  next();
-}
+  
+  next(); 
+};
 
 const createProductValidators = [
   body("title")
@@ -45,7 +45,6 @@ const createProductValidators = [
     .isIn(["USD", "INR"])
     .withMessage("priceCurrency must be USD or INR"),
 
-  // ⭐ CATEGORY VALIDATION (FIXED ES6 IMPORT)
   body("categoryId")
     .notEmpty()
     .withMessage("categoryId is required")
@@ -54,7 +53,6 @@ const createProductValidators = [
     .withMessage("categoryId must be a valid MongoDB ID")
     .bail()
     .custom(async (categoryId) => {
-      // ⭐ FIXED: Using ES6 import at top instead of require()
       const category = await categoryModel.findById(categoryId);
       if (!category) {
         throw new Error("Category does not exist");
@@ -64,13 +62,11 @@ const createProductValidators = [
       }
     }),
 
-  // ⭐ RATING VALIDATION
   body("rating")
     .optional()
     .isFloat({ min: 0, max: 5 })
     .withMessage("rating must be between 0 and 5"),
 
-  // ⭐ STOCK VALIDATION
   body("stock")
     .optional()
     .isInt({ min: 0 })
@@ -79,7 +75,6 @@ const createProductValidators = [
   handleValidationErrors,
 ];
 
-// ⭐ UPDATE PRODUCT VALIDATORS
 const updateProductValidators = [
   body("title")
     .optional()
@@ -106,14 +101,12 @@ const updateProductValidators = [
     .isIn(["USD", "INR"])
     .withMessage("priceCurrency must be USD or INR"),
 
-  // ⭐ CATEGORY VALIDATION (FIXED ES6 IMPORT)
   body("categoryId")
     .optional()
     .isMongoId()
     .withMessage("categoryId must be a valid MongoDB ID")
     .bail()
     .custom(async (categoryId) => {
-      // ⭐ FIXED: Using ES6 import at top
       const category = await categoryModel.findById(categoryId);
       if (!category) {
         throw new Error("Category does not exist");
@@ -123,19 +116,16 @@ const updateProductValidators = [
       }
     }),
 
-  // ⭐ RATING VALIDATION
   body("rating")
     .optional()
     .isFloat({ min: 0, max: 5 })
     .withMessage("rating must be between 0 and 5"),
 
-  // ⭐ STOCK VALIDATION
   body("stock")
     .optional()
     .isInt({ min: 0 })
     .withMessage("stock must be a non-negative integer"),
 
-  // ⭐ isActive VALIDATION
   body("isActive")
     .optional()
     .isBoolean()
@@ -144,7 +134,6 @@ const updateProductValidators = [
   handleValidationErrors,
 ];
 
-// ⭐ CREATE CATEGORY VALIDATORS
 const createCategoryValidators = [
   body("name")
     .isString()
@@ -172,7 +161,6 @@ const createCategoryValidators = [
   handleValidationErrors,
 ];
 
-// ⭐ UPDATE CATEGORY VALIDATORS
 const updateCategoryValidators = [
   body("name")
     .optional()

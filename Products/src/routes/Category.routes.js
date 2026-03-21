@@ -9,40 +9,29 @@ const router = express.Router();
 // PUBLIC ROUTES
 // ====================================
 
-// Get all active categories
 router.get("/", categoryController.getCategories);
- 
-// Get category by ID
-router.get("/:id", categoryController.getCategoryById);
- 
-// Get category by slug (for product page URLs)
 router.get("/slug/:slug", categoryController.getCategoryBySlug);
- 
-// ====================================
-// ADMIN ROUTES
-// ====================================
- 
-// Create new category
+
+// ADMIN ROUTES (WITHOUT validators for now)
 router.post(
   "/",
   createAuthMiddleware(["admin"]),
-  createCategoryValidators, // ⭐ WITH VALIDATORS
-  categoryController.createCategory
+  categoryController.createCategory  // ← NO VALIDATORS
 );
- 
-// Update category
+
 router.put(
   "/:id",
   createAuthMiddleware(["admin"]),
-  updateCategoryValidators, // ⭐ WITH VALIDATORS
-  categoryController.updateCategory
+  categoryController.updateCategory  // ← NO VALIDATORS
 );
- 
-// Delete category
+
 router.delete(
   "/:id",
   createAuthMiddleware(["admin"]),
-  categoryController.deleteCategory
+  categoryController.deleteCategory  // ← NO VALIDATORS
 );
+
+// Generic ID route MUST BE LAST
+router.get("/:id", categoryController.getCategoryById);
 
 export default router;

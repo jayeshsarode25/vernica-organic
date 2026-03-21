@@ -102,6 +102,11 @@ export const getCategoryBySlug = async (req, res) => {
 // CREATE CATEGORY (ADMIN ONLY)
 // ====================================
 export const createCategory = async (req, res) => {
+  console.log('🚀 createCategory called');
+  console.log('req:', typeof req);
+  console.log('res:', typeof res);
+  console.log('Stack trace:', new Error().stack);
+  
   try {
     const { name, description, displayOrder } = req.body;
 
@@ -153,6 +158,11 @@ export const createCategory = async (req, res) => {
       data: newCategory,
     });
   } catch (error) {
+    console.error('❌ Error in createCategory:', error);
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
