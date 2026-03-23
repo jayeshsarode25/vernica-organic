@@ -102,11 +102,6 @@ export const getCategoryBySlug = async (req, res) => {
 // CREATE CATEGORY (ADMIN ONLY)
 // ====================================
 export const createCategory = async (req, res) => {
-  console.log('🚀 createCategory called');
-  console.log('req:', typeof req);
-  console.log('res:', typeof res);
-  console.log('Stack trace:', new Error().stack);
-  
   try {
     const { name, description, displayOrder } = req.body;
 
@@ -144,9 +139,17 @@ export const createCategory = async (req, res) => {
       });
     }
 
+    // ⭐ GENERATE SLUG HERE (NOT IN PRE-HOOK)
+    const slug = name
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+
     const newCategory = new categoryModel({
       name,
       description,
+      slug, // ⭐ Add slug here
       displayOrder: displayOrder || 0,
     });
 
@@ -158,11 +161,6 @@ export const createCategory = async (req, res) => {
       data: newCategory,
     });
   } catch (error) {
-    console.error('❌ Error in createCategory:', error);
-    console.error('Error type:', error.constructor.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
@@ -232,7 +230,15 @@ export const updateCategory = async (req, res) => {
     }
 
     // Update fields only if provided
-    if (name) category.name = name;
+    if (name) {
+      category.name = name;
+      // ⭐ REGENERATE SLUG WHEN NAME CHANGES
+      category.slug = name
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
+    }
     if (description) category.description = description;
     if (displayOrder !== undefined) category.displayOrder = displayOrder;
     if (isActive !== undefined) category.isActive = isActive;

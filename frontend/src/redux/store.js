@@ -7,6 +7,7 @@ import cartReducer from '../redux/reducer/cartSlice'
 import orderReducer from '../redux/reducer/orderSlice'
 import paymentReducer from '../redux/reducer/paymentSlice'
 import profileReducer from '../redux/reducer/Profileslice'
+import categoryReducer from '../redux/reducer/Categoryslice'
 
 export const store = configureStore({
   reducer: {
@@ -18,5 +19,6 @@ export const store = configureStore({
     order : orderReducer,
     payment : paymentReducer,
     profile : profileReducer, 
+    category : categoryReducer,
   },
 })

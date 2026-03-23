@@ -12,8 +12,6 @@ function createAuthMiddleware(role = ["user"]) {
 
     try {
       const decoded = jwt.verify(token, config.JWT_SECRET);
-      console.log("TOKEN ROLE:", decoded.role);
-      console.log("ALLOWED ROLES:", role);
       if (!role.includes(decoded.role)) {
         return res.status(403).json({ message: "Forbidden" });
       }

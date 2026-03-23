@@ -36,23 +36,10 @@ const categorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Auto-generate slug from name before saving
-categorySchema.pre("save", function (next) {
-  if (this.isModified("name")) {
-    this.slug = this.name
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-");
-  }
-  next();
-});
-
 // Indexes for faster queries
 categorySchema.index({ slug: 1 });
 categorySchema.index({ isActive: 1 });
 
-// Create and export model
 const categoryModel = mongoose.model("category", categorySchema);
 
 export default categoryModel;

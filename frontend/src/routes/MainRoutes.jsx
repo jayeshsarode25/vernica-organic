@@ -17,6 +17,9 @@ import Users from "../pages/admin/Users";
 import CheckoutPage from "../pages/order/CheckoutPage";
 import PaymentPage from "../pages/order/PaymentPage";
 import Orders from "../pages/admin/Orders";
+import CategoryManagement from "../pages/admin/CategoryManagement";
+import ShopByCategory from "../pages/ShopByCategory";
+import CategoryProducts from "../pages/CategoryProducts";
 
 const MainRoutes = () => {
   return (
@@ -31,6 +34,8 @@ const MainRoutes = () => {
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/product" element={<Products />} />
         <Route path="/product/:id" element={<ProdectDetail />} />
+        <Route path="/shop-by-category" element={<ShopByCategory />} />
+        <Route path="/category/:slug" element={<CategoryProducts />} />
 
         {/* User protected routes */}
         <Route
@@ -72,6 +77,7 @@ const MainRoutes = () => {
           <Route path="products" element={<AdminProducts />} />
           <Route path="orders" element={<Orders />} />
           <Route path="users" element={<Users />} />
+          <Route path="/admin/categories" element={<CategoryManagement />} />
         </Route>
 
         <Route path="*" element={<PageNotFound />} />
