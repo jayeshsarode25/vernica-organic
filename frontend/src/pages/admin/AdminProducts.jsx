@@ -6,65 +6,75 @@ import {
   updateProduct,
   deleteProduct,
 } from "../../redux/reducer/productSlice";
+import { fetchCategories } from "../../redux/reducer/Categoryslice";
 
-/* ─── Add / Edit Modal ─────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────
+   1. ProductModal  (must be above AdminProducts)
+───────────────────────────────────────────────────────────────── */
 const ProductModal = ({ onClose, existing }) => {
   const dispatch = useDispatch();
   const isEdit = Boolean(existing);
 
+  const { categories } = useSelector((state) => state.categories);
+
   const [form, setForm] = useState({
-    title: existing?.title ?? "",
+    title:       existing?.title ?? "",
     description: existing?.description ?? "",
-    amount: existing?.price?.amount ?? "",
-    currency: existing?.price?.currency ?? "INR",
-    stock: existing?.stock ?? "",
+    amount:      existing?.price?.amount ?? "",
+    currency:    existing?.price?.currency ?? "INR",
+    stock:       existing?.stock ?? "",
+    categoryId:  existing?.categoryId?._id ?? existing?.categoryId ?? "",
   });
+
   const [images, setImages] = useState([]);
-  const [video, setVideo] = useState(null);
+  const [video,  setVideo]  = useState(null);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
+  const [error,  setError]  = useState(null);
+
+  useEffect(() => {
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    if (!form.categoryId) {
+      setError("Please select a category");
+      return;
+    }
+
     setSaving(true);
     try {
       if (isEdit) {
-        console.log("FormData entries:");
-        for (let [key, value] of fd.entries()) {
-          console.log(key, value); // ← shows every field being sent
-        }
         const result = await dispatch(
           updateProduct({
             id: existing._id,
             data: {
-              title: form.title,
-              description: form.description,
-              price: { amount: Number(form.amount), currency: form.currency },
-              stock: Number(form.stock),
+              title:         form.title,
+              description:   form.description,
+              priceAmount:   Number(form.amount),
+              priceCurrency: form.currency,
+              stock:         Number(form.stock),
+              categoryId:    form.categoryId,
             },
-          }),
+          })
         );
         if (updateProduct.rejected.match(result))
           throw new Error(result.payload?.message);
       } else {
         const fd = new FormData();
-        fd.append(
-          "price",
-          JSON.stringify({
-            amount: Number(form.amount),
-            currency: form.currency,
-          }),
-        );
-        fd.append("title", form.title);
-        fd.append("description", form.description);
-        fd.append("priceAmount", form.amount); 
+        fd.append("title",         form.title);
+        fd.append("description",   form.description);
+        fd.append("priceAmount",   form.amount);
         fd.append("priceCurrency", form.currency);
-        fd.append("stock", form.stock);
+        fd.append("stock",         form.stock);
+        fd.append("categoryId",    form.categoryId);
         images.forEach((img) => fd.append("imagesUrls", img));
         if (video) fd.append("videoUrl", video);
+
         const result = await dispatch(createProduct(fd));
         if (createProduct.rejected.match(result))
           throw new Error(result.payload?.message);
@@ -79,8 +89,10 @@ const ProductModal = ({ onClose, existing }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
           <h2 className="text-base font-semibold text-gray-900">
             {isEdit ? "Edit Product" : "Add Product"}
           </h2>
@@ -92,6 +104,7 @@ const ProductModal = ({ onClose, existing }) => {
           </button>
         </div>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           {error && (
             <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
@@ -99,6 +112,7 @@ const ProductModal = ({ onClose, existing }) => {
             </p>
           )}
 
+          {/* Title */}
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
               Title *
@@ -112,6 +126,7 @@ const ProductModal = ({ onClose, existing }) => {
             />
           </div>
 
+          {/* Description */}
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
               Description *
@@ -126,6 +141,28 @@ const ProductModal = ({ onClose, existing }) => {
             />
           </div>
 
+          {/* Category */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Category *
+            </label>
+            <select
+              required
+              value={form.categoryId}
+              onChange={set("categoryId")}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+            >
+              <option value="">Select a category</option>
+              {Array.isArray(categories) &&
+                categories.map((cat) => (
+                  <option key={cat._id} value={cat._id}>
+                    {cat.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          {/* Price + Currency */}
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
               <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -157,6 +194,7 @@ const ProductModal = ({ onClose, existing }) => {
             </div>
           </div>
 
+          {/* Stock */}
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
               Stock *
@@ -172,6 +210,7 @@ const ProductModal = ({ onClose, existing }) => {
             />
           </div>
 
+          {/* Images + Video (create only) */}
           {!isEdit && (
             <>
               <div>
@@ -193,6 +232,7 @@ const ProductModal = ({ onClose, existing }) => {
                   </p>
                 )}
               </div>
+
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
                   Video (max 1)
@@ -210,6 +250,7 @@ const ProductModal = ({ onClose, existing }) => {
             </>
           )}
 
+          {/* Actions */}
           <div className="flex gap-3 pt-2">
             <button
               type="button"
@@ -232,16 +273,17 @@ const ProductModal = ({ onClose, existing }) => {
   );
 };
 
-/* ─── Main Page ────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────
+   2. AdminProducts  (uses ProductModal above)
+───────────────────────────────────────────────────────────────── */
 const AdminProducts = () => {
   const dispatch = useDispatch();
-  // ✅ reading from Redux store — no local state for products
-  const {
-    items: products,
-    loading,
-    error,
-  } = useSelector((state) => state.admin);
-  const [modal, setModal] = useState(null); // null | "add" | product object
+
+  const { list: products, loading, error } = useSelector(
+    (state) => state.products
+  );
+
+  const [modal,      setModal]      = useState(null); // null | "add" | product object
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
@@ -271,6 +313,7 @@ const AdminProducts = () => {
 
   return (
     <div>
+      {/* Modal */}
       {modal && (
         <ProductModal
           existing={modal === "add" ? null : modal}
@@ -278,6 +321,7 @@ const AdminProducts = () => {
         />
       )}
 
+      {/* Page header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Products</h1>
@@ -293,12 +337,16 @@ const AdminProducts = () => {
         </button>
       </div>
 
+      {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="text-left px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wider">
                 Product
+              </th>
+              <th className="text-left px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wider">
+                Category
               </th>
               <th className="text-left px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wider">
                 Price
@@ -314,22 +362,27 @@ const AdminProducts = () => {
               </th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-gray-100">
             {products.length === 0 && (
               <tr>
-                <td colSpan={5} className="text-center py-10 text-gray-400">
+                <td colSpan={6} className="text-center py-10 text-gray-400">
                   No products found
                 </td>
               </tr>
             )}
+
             {products.map((product) => {
-              const isDeleting = deletingId === product._id;
-              const firstImage = product.images?.[0]?.url;
+              const isDeleting   = deletingId === product._id;
+              const firstImage   = product.images?.[0]?.url;
+              const categoryName = product.categoryId?.name ?? "—";
+
               return (
                 <tr
                   key={product._id}
                   className="hover:bg-gray-50 transition-colors"
                 >
+                  {/* Product */}
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       {firstImage ? (
@@ -353,12 +406,21 @@ const AdminProducts = () => {
                       </div>
                     </div>
                   </td>
+
+                  {/* Category */}
+                  <td className="px-5 py-3.5">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                      {categoryName}
+                    </span>
+                  </td>
+
+                  {/* Price */}
                   <td className="px-5 py-3.5 text-gray-700 font-medium">
-                    {product.price?.currency === "INR"
-                      ? "₹"
-                      : product.price?.currency}{" "}
+                    {product.price?.currency === "INR" ? "₹" : product.price?.currency}{" "}
                     {product.price?.amount ?? "—"}
                   </td>
+
+                  {/* Stock */}
                   <td className="px-5 py-3.5">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -372,12 +434,16 @@ const AdminProducts = () => {
                         : "Out of stock"}
                     </span>
                   </td>
+
+                  {/* Media */}
                   <td className="px-5 py-3.5 text-xs text-gray-400">
                     <span className="mr-3">
                       🖼 {product.images?.length ?? 0} img
                     </span>
                     <span>{product.video?.url ? "🎥 1 vid" : "—"}</span>
                   </td>
+
+                  {/* Actions */}
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-2">
                       <button

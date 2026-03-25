@@ -1,12 +1,13 @@
 import mongoose from "mongoose";
 import productModel from "../model/product.model.js";
+import categoryModel from "../model/category.model.js";
 import { uploadImage, uploadVideo } from "../services/imagekit.services.js";
 
 export const createProduct = async (req, res) => {
   try {
     const { title, description, priceAmount, priceCurrency = "INR", categoryId, rating = 0, stock = 0 } = req.body;
  
-    // ⭐ NEW: Validate category exists
+    
     if (!categoryId) {
       return res.status(400).json({ message: "Category ID is required" });
     }

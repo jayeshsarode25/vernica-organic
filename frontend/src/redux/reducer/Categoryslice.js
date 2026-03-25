@@ -1,20 +1,23 @@
-// src/redux/slices/categorySlice.js
+
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import {
+  fetchAllCategories,
+  fetchCategoryByIdService,
+  fetchCategoryBySlugService,
+  createCategoryService,
+  updateCategoryService,
+  deleteCategoryService,
+} from '../services/Categoryservice';
 
-const API_BASE = 'http://localhost:3002';
 
-// ====================================
-// ASYNC THUNKS
-// ====================================
 
 export const fetchCategories = createAsyncThunk(
   'categories/fetchCategories',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/categories`);
-      if (!response.ok) throw new Error('Failed to fetch categories');
-      return await response.json();
+      const response = await fetchAllCategories();
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -25,9 +28,8 @@ export const fetchCategoryById = createAsyncThunk(
   'categories/fetchCategoryById',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/categories/${id}`);
-      if (!response.ok) throw new Error('Category not found');
-      return await response.json();
+      const response = await fetchCategoryByIdService(id);
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -38,9 +40,8 @@ export const fetchCategoryBySlug = createAsyncThunk(
   'categories/fetchCategoryBySlug',
   async (slug, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/categories/slug/${slug}`);
-      if (!response.ok) throw new Error('Category not found');
-      return await response.json();
+      const response = await fetchCategoryBySlugService(slug);
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -51,20 +52,8 @@ export const createCategory = createAsyncThunk(
   'categories/createCategory',
   async (categoryData, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/categories`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(categoryData),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create category');
-      }
-      return await response.json();
+      const response = await createCategoryService(categoryData);
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -75,20 +64,8 @@ export const updateCategory = createAsyncThunk(
   'categories/updateCategory',
   async ({ id, categoryData }, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/categories/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(categoryData),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update category');
-      }
-      return await response.json();
+      const response = await updateCategoryService(id, categoryData);
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -99,17 +76,7 @@ export const deleteCategory = createAsyncThunk(
   'categories/deleteCategory',
   async (id, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/categories/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete category');
-      }
+      await deleteCategoryService(id);
       return id;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -117,9 +84,6 @@ export const deleteCategory = createAsyncThunk(
   }
 );
 
-// ====================================
-// INITIAL STATE
-// ====================================
 
 const initialState = {
   categories: [],
@@ -130,9 +94,7 @@ const initialState = {
   successMessage: '',
 };
 
-// ====================================
-// SLICE
-// ====================================
+
 
 const categorySlice = createSlice({
   name: 'categories',
@@ -153,7 +115,7 @@ const categorySlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Fetch Categories
+    
     builder
       .addCase(fetchCategories.pending, (state) => {
         state.loading = true;

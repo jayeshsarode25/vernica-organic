@@ -5,6 +5,7 @@ import Logo from "./Logo";
 import { CircleUser, Search, ShoppingBag, Menu, X } from "lucide-react";
 import SearchBar from "../SearchBar";
 import CartDrawer from "../cart/cartDrawer";
+import CategoryDropdown from "../categories/CategoryDropdown";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -64,6 +65,10 @@ const Navbar = () => {
                   {link.label}
                 </NavLink>
               ))}
+              
+              {/* ← ADD THIS - CATEGORY DROPDOWN */}
+              <CategoryDropdown />
+              
             </div>
 
             <div className="flex items-center gap-4">

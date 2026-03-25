@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCategories } from '../../redux/slices/categorySlice';
+import { fetchCategories } from '../../redux/reducer/Categoryslice';
 import { Link } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
  

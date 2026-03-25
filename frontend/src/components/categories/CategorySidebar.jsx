@@ -25,7 +25,7 @@ const CategorySidebar = ({ onSelectCategory }) => {
       <div className="p-4 space-y-2">
         {/* All Products */}
         <Link
-          to="/shop"
+          to="/product"
           className={`block px-4 py-3 rounded-lg font-medium transition ${
             !slug
               ? 'bg-blue-600 text-white'

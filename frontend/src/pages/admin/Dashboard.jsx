@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { productCount } from "../../redux/reducer/productSlice";
 import { fetchUserCount, fetchUsers } from "../../redux/reducer/userSlice";
-import { getDashboard } from "../../redux/reducer/orderSlice"; // Add this
+import { getDashboard } from "../../redux/reducer/orderSlice";
+import { fetchCategories } from "../../redux/reducer/Categoryslice"; 
 import { Link } from "react-router-dom";
 
 const StatCard = ({ label, value, loading, iconBg, icon }) => (
@@ -44,15 +45,22 @@ const Dashboard = () => {
     (s) => s.order
   );
 
+  // ← ADD THIS - Categories state
+  const { categories, loading: categoryLoading } = useSelector(
+    (s) => s.categories
+  );
+
   const blockedCount = userItems.filter((u) => u.isBlocked).length;
   const totalOrders = orderDashboard?.totalOrders || 0;
   const totalRevenue = orderDashboard?.totalRevenue || 0;
+  const categoryCount = categories?.length || 0; // ← ADD THIS
 
   useEffect(() => {
     dispatch(productCount());
     dispatch(fetchUserCount());
     dispatch(fetchUsers());
     dispatch(getDashboard()); // Fetch order dashboard data
+    dispatch(fetchCategories()); // ← ADD THIS - Fetch categories
   }, [dispatch]);
 
   return (
@@ -60,7 +68,8 @@ const Dashboard = () => {
       <h1 className="text-xl font-semibold text-gray-900 mb-1">Dashboard</h1>
       <p className="text-sm text-gray-500 mb-8">Welcome back, Admin</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* ← UPDATED: Changed from 4 columns to 5 columns for categories */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
         <StatCard
           label="Total Users"
           value={userCount}
@@ -89,6 +98,20 @@ const Dashboard = () => {
                 strokeWidth="1.5"
                 fill="none"
               />
+            </svg>
+          }
+        />
+        <StatCard
+          label="Total Categories"
+          value={categoryCount}
+          loading={categoryLoading}
+          iconBg="bg-orange-50"
+          icon={
+            <svg width="22" height="22" viewBox="0 0 16 16" fill="#F97316">
+              <rect x="1" y="1" width="6" height="6" rx="1" />
+              <rect x="9" y="1" width="6" height="6" rx="1" />
+              <rect x="1" y="9" width="6" height="6" rx="1" />
+              <rect x="9" y="9" width="6" height="6" rx="1" />
             </svg>
           }
         />
@@ -123,7 +146,8 @@ const Dashboard = () => {
       {/* Quick actions */}
       <div className="mt-8">
         <p className="text-sm font-medium text-gray-700 mb-3">Quick actions</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* ← UPDATED: Changed from 4 columns to 5 columns for categories */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <Link
             to="/admin/dashboard"
             className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-5 py-4 hover:border-blue-300 hover:bg-blue-50 transition-colors group"
@@ -141,6 +165,27 @@ const Dashboard = () => {
                 Dashboard
               </p>
               <p className="text-xs text-gray-400">View all stats</p>
+            </div>
+          </Link>
+
+          {/* ← ADD THIS - Categories Quick Action */}
+          <Link
+            to="/admin/categories"
+            className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-5 py-4 hover:border-orange-300 hover:bg-orange-50 transition-colors group"
+          >
+            <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="#F97316">
+                <rect x="1" y="1" width="6" height="6" rx="1" />
+                <rect x="9" y="1" width="6" height="6" rx="1" />
+                <rect x="1" y="9" width="6" height="6" rx="1" />
+                <rect x="9" y="9" width="6" height="6" rx="1" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-800 group-hover:text-orange-700">
+                Manage Categories
+              </p>
+              <p className="text-xs text-gray-400">Create and manage categories</p>
             </div>
           </Link>
 

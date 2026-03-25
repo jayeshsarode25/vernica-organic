@@ -17,11 +17,7 @@ router.get("/category/:categoryId", productController.getProductsByCategory);
 // Get products by category slug
 router.get("/category-slug/:slug", productController.getProductsByCategorySlug);
 
-// ====================================
-// ADMIN ROUTES (With Auth)
-// ====================================
 
-// Create product
 router.post(
   "/",
   createAuthMiddleware(["admin"]),

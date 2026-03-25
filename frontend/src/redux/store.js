@@ -19,6 +19,6 @@ export const store = configureStore({
     order : orderReducer,
     payment : paymentReducer,
     profile : profileReducer, 
-    category : categoryReducer,
+    categories : categoryReducer,
   },
 })
