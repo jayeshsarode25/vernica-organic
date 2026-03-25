@@ -4,7 +4,7 @@ import { featchProducts } from "../../redux/reducer/productSlice";
 import ProductCard from "./ProductCart";
 import ProductLoader from "./ProductLoader";
 
-const ProductGrid = () => {
+const ProductGrid = ({ selectedCategory = "All" }) => {
   const dispatch = useDispatch();
 
   const q = useSelector((state) => state.search.query) || "";
@@ -22,9 +22,22 @@ const ProductGrid = () => {
     dispatch(featchProducts({ skip, limit }));
   }, [dispatch, skip, limit]);
 
+  // ── 1. filter by category ──────────────────────────────────────
+  const categoryFiltered =
+    selectedCategory === "All"
+      ? list
+      : list.filter(
+          (p) =>
+            p.categoryId?._id === selectedCategory ||
+            p.categoryId === selectedCategory
+        );
+
+  // ── 2. filter by search query ──────────────────────────────────
   const filteredProducts = !q?.trim()
-    ? list
-    : list.filter((p) => p?.title?.toLowerCase().includes(q.toLowerCase()));
+    ? categoryFiltered
+    : categoryFiltered.filter((p) =>
+        p?.title?.toLowerCase().includes(q.toLowerCase())
+      );
 
   if (loading)
     return (
@@ -41,13 +54,24 @@ const ProductGrid = () => {
     );
 
   if (!list.length)
-    return <p className="text-center mt-10 text-gray-500">No products found</p>;
+    return (
+      <p className="text-center mt-10 text-gray-500">No products found</p>
+    );
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {/* Results count */}
+      <p className="text-sm text-gray-400 mb-4">
+        Showing {filteredProducts.length} product
+        {filteredProducts.length !== 1 ? "s" : ""}
+        {selectedCategory !== "All" ? " in this category" : ""}
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
         {filteredProducts.length === 0 ? (
-          <p>No products found</p>
+          <p className="col-span-full text-center text-gray-500 mt-10">
+            No products found
+          </p>
         ) : (
           filteredProducts.map((product) => (
             <ProductCard key={product._id} product={product} />
@@ -55,31 +79,34 @@ const ProductGrid = () => {
         )}
       </div>
 
-      <div className="flex justify-center items-center mt-12 gap-4">
-        <button
-          onClick={() =>
-            dispatch(featchProducts({ skip: skip - limit, limit }))
-          }
-          disabled={skip === 0}
-          className="px-5 py-2 rounded-lg border hover:bg-gray-100 disabled:opacity-40"
-        >
-          Prev
-        </button>
+      {/* Pagination — only show when viewing All or enough results */}
+      {selectedCategory === "All" && (
+        <div className="flex justify-center items-center mt-12 gap-4">
+          <button
+            onClick={() =>
+              dispatch(featchProducts({ skip: skip - limit, limit }))
+            }
+            disabled={skip === 0}
+            className="px-5 py-2 rounded-lg border hover:bg-gray-100 disabled:opacity-40"
+          >
+            Prev
+          </button>
 
-        <span className="text-sm text-gray-500">
-          Page {Math.floor(skip / limit) + 1}
-        </span>
+          <span className="text-sm text-gray-500">
+            Page {Math.floor(skip / limit) + 1}
+          </span>
 
-        <button
-          onClick={() =>
-            dispatch(featchProducts({ skip: skip + limit, limit }))
-          }
-          disabled={skip + limit >= total}
-          className="px-5 py-2 rounded-lg border hover:bg-gray-100 disabled:opacity-40"
-        >
-          Next
-        </button>
-      </div>
+          <button
+            onClick={() =>
+              dispatch(featchProducts({ skip: skip + limit, limit }))
+            }
+            disabled={skip + limit >= total}
+            className="px-5 py-2 rounded-lg border hover:bg-gray-100 disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </>
   );
 };

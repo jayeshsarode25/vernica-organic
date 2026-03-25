@@ -273,9 +273,7 @@ const ProductModal = ({ onClose, existing }) => {
   );
 };
 
-/* ─────────────────────────────────────────────────────────────────
-   2. AdminProducts  (uses ProductModal above)
-───────────────────────────────────────────────────────────────── */
+
 const AdminProducts = () => {
   const dispatch = useDispatch();
 

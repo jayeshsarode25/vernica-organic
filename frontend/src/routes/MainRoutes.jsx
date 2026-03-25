@@ -18,7 +18,7 @@ import CheckoutPage from "../pages/order/CheckoutPage";
 import PaymentPage from "../pages/order/PaymentPage";
 import Orders from "../pages/admin/Orders";
 import CategoryManagement from "../pages/admin/CategoryManagement";
-import ShopByCategory from "../pages/ShopByCategory";
+import CategorySection from "../components/CategorySection";
 import CategoryProducts from "../pages/CategoryProducts";
 
 const MainRoutes = () => {
@@ -34,7 +34,7 @@ const MainRoutes = () => {
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/product" element={<Products />} />
         <Route path="/product/:id" element={<ProdectDetail />} />
-        <Route path="/shop-by-category" element={<ShopByCategory />} />
+        <Route path="/shop-by-category" element={<CategorySection />} />
         <Route path="/category/:slug" element={<CategoryProducts />} />
 
         {/* User protected routes */}

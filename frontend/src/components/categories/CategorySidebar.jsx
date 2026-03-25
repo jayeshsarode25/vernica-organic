@@ -1,66 +1,78 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchCategories } from '../../redux/reducer/Categoryslice'
-import { Link, useParams } from 'react-router-dom';
- 
-const CategorySidebar = ({ onSelectCategory }) => {
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCategories } from "../../redux/reducer/Categoryslice";
+
+const CategorySidebar = ({ selected, onSelect }) => {
   const dispatch = useDispatch();
-  const { categories } = useSelector((state) => state.categories);
-  const { slug } = useParams();
- 
+  const { categories, loading } = useSelector((state) => state.categories);
+
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
- 
-  const activeCategories = categories.filter((cat) => cat.isActive);
- 
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4">
-        <h3 className="text-lg font-bold">Categories</h3>
-      </div>
- 
-      {/* Content */}
-      <div className="p-4 space-y-2">
-        {/* All Products */}
-        <Link
-          to="/product"
-          className={`block px-4 py-3 rounded-lg font-medium transition ${
-            !slug
-              ? 'bg-blue-600 text-white'
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          All Products
-        </Link>
- 
-        {/* Categories */}
-        {activeCategories.map((category) => (
-          <Link
-            key={category._id}
-            to={`/category/${category.slug}`}
-            className={`block px-4 py-3 rounded-lg transition ${
-              slug === category.slug
-                ? 'bg-blue-100 text-blue-700 font-medium'
-                : 'text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            <div className="flex justify-between items-center">
-              <span>{category.name}</span>
-              <span className={`text-xs px-2 py-1 rounded-full ${
-                slug === category.slug
-                  ? 'bg-blue-200'
-                  : 'bg-gray-200'
-              }`}>
-                {category.productCount}
-              </span>
-            </div>
-          </Link>
-        ))}
-      </div>
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+      <h2 className="text-base font-semibold text-gray-800 mb-4">
+        Categories
+      </h2>
+
+      {loading ? (
+        // Skeleton
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="h-9 bg-gray-100 rounded-lg animate-pulse"
+            />
+          ))}
+        </div>
+      ) : (
+        <ul className="space-y-1">
+          {/* All */}
+          <li>
+            <button
+              onClick={() => onSelect("All")}
+              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                selected === "All"
+                  ? "bg-black text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              All Products
+            </button>
+          </li>
+
+          {/* Dynamic categories */}
+          {Array.isArray(categories) &&
+            categories.map((cat) => (
+              <li key={cat._id}>
+                <button
+                  onClick={() => onSelect(cat._id)}
+                  className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-between ${
+                    selected === cat._id
+                      ? "bg-black text-white"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <span>{cat.name}</span>
+                  {cat.productCount > 0 && (
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        selected === cat._id
+                          ? "bg-white/20 text-white"
+                          : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {cat.productCount}
+                    </span>
+                  )}
+                </button>
+              </li>
+            ))}
+        </ul>
+      )}
     </div>
   );
 };
- 
+
 export default CategorySidebar;
