@@ -5,11 +5,13 @@ import morgan from 'morgan';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from "passport-google-oauth20"
 import config from './config/config.js';
+import { applySecurityMiddleware, authLimiter } from './middleware/Security.middleware.js'
 
 
 
 
 const app = express();
+
 app.use(
   cors({
     origin: "http://localhost:5173", 
@@ -19,6 +21,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+applySecurityMiddleware(app);
 app.use(morgan('dev'));
 
 
@@ -48,7 +51,7 @@ app.get('/', (req, res) => {
 
 
 import authRoutes from './routes/user.route.js'
-app.use('/api/auth', authRoutes)
+app.use('/api/auth',authLimiter, authRoutes)
 
 
 export default app;

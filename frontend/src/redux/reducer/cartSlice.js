@@ -21,11 +21,11 @@ export const addToCart = createAsyncThunk(
   async ({ productId, qty }, thunkApi) => {
     try {
       const res = await addItemToCartApi(productId, qty);
-      return res.data;
+      return { ...res.data, productId }; // ✅ pass productId back to remove from addingIds
     } catch (error) {
-      return thunkApi.rejectWithValue(error.response?.data);
+      return thunkApi.rejectWithValue({ ...error.response?.data, productId });
     }
-  },
+  }
 );
 
 export const updateCartItem = createAsyncThunk(
@@ -33,11 +33,11 @@ export const updateCartItem = createAsyncThunk(
   async ({ productId, qty }, thunkApi) => {
     try {
       const res = await updateItemQuantityApi(productId, qty);
-      return res.data;
+      return { ...res.data, productId };
     } catch (error) {
-      return thunkApi.rejectWithValue(error.response?.data);
+      return thunkApi.rejectWithValue({ ...error.response?.data, productId });
     }
-  },
+  }
 );
 
 export const removeCartItem = createAsyncThunk(
@@ -48,11 +48,11 @@ export const removeCartItem = createAsyncThunk(
         return thunkApi.rejectWithValue({ message: "productId is required" });
       }
       const res = await removeItemFromCartApi(productId);
-      return res.data;
+      return { ...res.data, productId };
     } catch (error) {
-      return thunkApi.rejectWithValue(error.response?.data);
+      return thunkApi.rejectWithValue({ ...error.response?.data, productId });
     }
-  },
+  }
 );
 
 export const clearCart = createAsyncThunk("cart/clear", async (_, thunkApi) => {
@@ -67,39 +67,81 @@ export const clearCart = createAsyncThunk("cart/clear", async (_, thunkApi) => {
 const cartSlice = createSlice({
   name: "cart",
   initialState: {
-    items: [],
-    totals: null,
-    loading: false,
-    error: null,
+    items:      [],
+    totals:     null,
+    loading:    false, // global — for full cart load
+    error:      null,
+    addingIds:  [],    // ✅ per-product loading: ["productId1", "productId2"]
+    removingIds: [],   // ✅ per-product removing
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
+
+      // ── getCart ──────────────────────────────────────────────────
       .addCase(getCart.pending, (state) => {
         state.loading = true;
       })
       .addCase(getCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.cart?.items || [];
+        state.items   = action.payload.cart?.items || [];
       })
       .addCase(getCart.rejected, (state) => {
         state.loading = false;
       })
+
+      // ── addToCart ────────────────────────────────────────────────
+      .addCase(addToCart.pending, (state, action) => {
+        // ✅ add productId to addingIds so only that button shows loading
+        const id = action.meta.arg.productId;
+        if (!state.addingIds.includes(id)) state.addingIds.push(id);
+      })
       .addCase(addToCart.fulfilled, (state, action) => {
-        state.items = action.payload.cart?.items || [];
-        state.totals = action.payload.totals || null;
+        // ✅ remove from addingIds
+        state.addingIds = state.addingIds.filter((id) => id !== action.payload.productId);
+        state.items     = action.payload.cart?.items || [];
+        state.totals    = action.payload.totals || null;
+      })
+      .addCase(addToCart.rejected, (state, action) => {
+        // ✅ remove from addingIds even on failure
+        state.addingIds = state.addingIds.filter((id) => id !== action.payload?.productId);
+        state.error     = action.payload?.message || "Failed to add to cart";
+      })
+
+      // ── updateCartItem ───────────────────────────────────────────
+      .addCase(updateCartItem.pending, (state, action) => {
+        const id = action.meta.arg.productId;
+        if (!state.addingIds.includes(id)) state.addingIds.push(id);
       })
       .addCase(updateCartItem.fulfilled, (state, action) => {
-        state.items = action.payload.cart?.items || [];
-        state.totals = action.payload.totals || null;
+        state.addingIds = state.addingIds.filter((id) => id !== action.payload.productId);
+        state.items     = action.payload.cart?.items || [];
+        state.totals    = action.payload.totals || null;
+      })
+      .addCase(updateCartItem.rejected, (state, action) => {
+        state.addingIds = state.addingIds.filter((id) => id !== action.payload?.productId);
+      })
+
+      // ── removeCartItem ───────────────────────────────────────────
+      .addCase(removeCartItem.pending, (state, action) => {
+        const id = action.meta.arg;
+        if (!state.removingIds.includes(id)) state.removingIds.push(id);
       })
       .addCase(removeCartItem.fulfilled, (state, action) => {
-        state.items = action.payload.cart?.items || [];
-        state.totals = action.payload.totals || null;
+        state.removingIds = state.removingIds.filter((id) => id !== action.payload.productId);
+        state.items       = action.payload.cart?.items || [];
+        state.totals      = action.payload.totals || null;
       })
+      .addCase(removeCartItem.rejected, (state, action) => {
+        state.removingIds = state.removingIds.filter((id) => id !== action.payload?.productId);
+      })
+
+      // ── clearCart ────────────────────────────────────────────────
       .addCase(clearCart.fulfilled, (state, action) => {
-        state.items = action.payload.cart?.items || [];
-        state.totals = action.payload.totals || null;
+        state.items      = action.payload.cart?.items || [];
+        state.totals     = action.payload.totals || null;
+        state.addingIds  = [];
+        state.removingIds = [];
       });
   },
 });

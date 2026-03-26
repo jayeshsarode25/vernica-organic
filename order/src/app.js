@@ -2,6 +2,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import orderRoutes from "../src/routes/order.route.js";
 import cors from "cors";
+import { applySecurityMiddleware } from './middleware/Security.middleware.js';
 
 const app = express();
 app.use(
@@ -13,6 +14,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+applySecurityMiddleware(app);
 
 app.get("/", (req, res) => {
   res.status(200).json({
