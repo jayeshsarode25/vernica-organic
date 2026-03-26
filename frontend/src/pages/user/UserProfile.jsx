@@ -8,52 +8,39 @@ import {
   deleteAddress,
   logoutUser,
   clearToast,
-} from "../../redux/reducer/Profileslice"; // adjust path
-
-// ─── Mock Orders — replace with real thunk when API is ready ─────────────────
-const MOCK_ORDERS = [
-  { id: "#ORD-8821", date: "Mar 05, 2026", status: "Delivered", total: "₹10,399", items: 3 },
-  { id: "#ORD-8754", date: "Feb 20, 2026", status: "Shipped",   total: "₹7,450",  items: 2 },
-  { id: "#ORD-8701", date: "Feb 10, 2026", status: "Delivered", total: "₹17,600", items: 5 },
-  { id: "#ORD-8633", date: "Jan 28, 2026", status: "Cancelled", total: "₹3,750",  items: 1 },
-  { id: "#ORD-8590", date: "Jan 14, 2026", status: "Delivered", total: "₹27,530", items: 4 },
-];
+} from "../../redux/reducer/Profileslice";
+import { getMyOrders } from "../../redux/reducer/orderSlice";
 
 const STATUS = {
-  Delivered: { pill: "bg-emerald-900/40 text-emerald-400", dot: "bg-emerald-400" },
-  Shipped:   { pill: "bg-blue-900/40 text-blue-400",       dot: "bg-blue-400"   },
-  Cancelled: { pill: "bg-red-900/40 text-red-400",         dot: "bg-red-400"    },
-  Pending:   { pill: "bg-amber-900/40 text-amber-400",     dot: "bg-amber-400"  },
+  Delivered: { pill: "bg-green-50 text-green-700 border border-green-200",   dot: "bg-green-400" },
+  Shipped:   { pill: "bg-blue-50 text-blue-700 border border-blue-200",      dot: "bg-blue-400"  },
+  Cancelled: { pill: "bg-red-50 text-red-600 border border-red-200",         dot: "bg-red-400"   },
+  Pending:   { pill: "bg-amber-50 text-amber-700 border border-amber-200",   dot: "bg-amber-400" },
 };
 
-// ─── Toast ───────────────────────────────────────────────────────────────────
+// ─── Toast ────────────────────────────────────────────────────────────────────
 function Toast() {
   const dispatch = useDispatch();
   const toast = useSelector((s) => s.profile.toast);
-
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => dispatch(clearToast()), 3000);
     return () => clearTimeout(t);
   }, [toast, dispatch]);
-
   if (!toast) return null;
-
-  const bg = { success: "bg-emerald-600", error: "bg-red-600", info: "bg-blue-600" };
+  const bg   = { success: "bg-green-500", error: "bg-red-500", info: "bg-gray-700" };
   const icon = { success: "✓", error: "✕", info: "→" };
-
   return (
-    <div className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-white text-sm font-semibold shadow-2xl animate-pop-in ${bg[toast.type] ?? bg.info}`}>
+    <div className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-white text-sm font-semibold shadow-xl animate-pop-in ${bg[toast.type] ?? bg.info}`}>
       <span>{icon[toast.type]}</span> {toast.msg}
     </div>
   );
 }
 
-// ─── Add Address Form (inline) ────────────────────────────────────────────────
+// ─── Add Address Form ─────────────────────────────────────────────────────────
 function AddAddressForm({ onCancel }) {
   const dispatch = useDispatch();
   const adding = useSelector((s) => s.profile.addingAddress);
-
   const [form, setForm] = useState({
     street: "", city: "", state: "", pincode: "", country: "India", isDefault: false,
   });
@@ -91,25 +78,23 @@ function AddAddressForm({ onCancel }) {
   ];
 
   return (
-    <div className="mt-4 p-5 border border-dashed border-slate-600 rounded-2xl bg-slate-800/40 animate-pop-in">
-      <h3 className="text-sm font-bold text-slate-200 mb-4">New Address</h3>
+    <div className="mt-4 p-5 border border-dashed border-gray-300 rounded-2xl bg-gray-50 animate-pop-in">
+      <h3 className="text-sm font-bold text-gray-800 mb-4">New Address</h3>
       <div className="grid grid-cols-2 gap-3">
         {fields.map((f) => (
           <div key={f.name} className={f.full ? "col-span-2" : "col-span-1"}>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
               {f.label}
             </label>
             <input
-              name={f.name}
-              value={form[f.name]}
-              onChange={handleChange}
-              placeholder={f.placeholder}
-              maxLength={f.maxLength}
-              className={`w-full bg-slate-900 border rounded-xl px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500
-                ${errors[f.name] ? "border-red-500" : "border-slate-700"}`}
+              name={f.name} value={form[f.name]} onChange={handleChange}
+              placeholder={f.placeholder} maxLength={f.maxLength}
+              className={`w-full bg-white border rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 transition-all
+                focus:outline-none focus:ring-2 focus:ring-green-300/40 focus:border-green-400
+                ${errors[f.name] ? "border-red-400" : "border-gray-200"}`}
             />
             {errors[f.name] && (
-              <span className="text-xs text-red-400 mt-1 block">{errors[f.name]}</span>
+              <span className="text-xs text-red-500 mt-1 block">{errors[f.name]}</span>
             )}
           </div>
         ))}
@@ -117,33 +102,29 @@ function AddAddressForm({ onCancel }) {
 
       <label className="flex items-center gap-2.5 mt-3 cursor-pointer">
         <input
-          type="checkbox"
-          name="isDefault"
-          checked={form.isDefault}
-          onChange={handleChange}
-          className="w-4 h-4 accent-orange-500 cursor-pointer"
+          type="checkbox" name="isDefault" checked={form.isDefault}
+          onChange={handleChange} className="w-4 h-4 accent-green-400 cursor-pointer"
         />
-        <span className="text-xs text-slate-400">Set as default address</span>
+        <span className="text-xs text-gray-500">Set as default address</span>
       </label>
 
       <div className="flex gap-2 mt-4">
         <button
           onClick={onCancel}
-          className="flex-1 py-2.5 text-sm font-semibold text-slate-400 bg-slate-800 border border-slate-700 rounded-xl hover:bg-slate-700 transition-colors"
+          className="flex-1 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
         >
           Cancel
         </button>
         <button
-          onClick={handleSave}
-          disabled={adding}
-          className="flex-1 py-2.5 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-60 rounded-xl transition-colors"
+          onClick={handleSave} disabled={adding}
+          className="flex-1 py-2.5 text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 disabled:opacity-60 rounded-xl transition-colors"
         >
-          {adding ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Saving…
-            </span>
-          ) : "Save Address"}
+          {adding
+            ? <span className="flex items-center justify-center gap-2">
+                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Saving…
+              </span>
+            : "Save Address"}
         </button>
       </div>
     </div>
@@ -152,31 +133,24 @@ function AddAddressForm({ onCancel }) {
 
 // ─── Address Card ─────────────────────────────────────────────────────────────
 function AddressCard({ addr }) {
-  const dispatch    = useDispatch();
-  const deletingId  = useSelector((s) => s.profile.deletingAddressId);
-  const isDeleting  = deletingId === addr._id;
-
-  const handleDelete = () => {
-    if (!window.confirm("Remove this address?")) return;
-    dispatch(deleteAddress(addr._id));
-  };
+  const dispatch   = useDispatch();
+  const deletingId = useSelector((s) => s.profile.deletingAddressId);
+  const isDeleting = deletingId === addr._id;
 
   return (
-    <div className="relative bg-slate-800/50 border border-slate-700 rounded-2xl p-5 hover:border-slate-500 transition-colors group animate-pop-in">
+    <div className="relative bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-300 hover:shadow-sm transition-all animate-pop-in">
       {addr.isDefault && (
-        <span className="inline-flex items-center gap-1 text-xs font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-md px-2 py-0.5 mb-3">
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-50 border border-green-200 rounded-md px-2 py-0.5 mb-3">
           ★ Default
         </span>
       )}
-      <p className="text-sm font-semibold text-slate-100 mb-1">{addr.street}</p>
-      <p className="text-xs text-slate-400 leading-relaxed">
-        {addr.city}, {addr.state} — {addr.pincode}
-      </p>
-      <p className="text-xs text-slate-500">{addr.country}</p>
+      <p className="text-sm font-semibold text-gray-900 mb-1">{addr.street}</p>
+      <p className="text-xs text-gray-500 leading-relaxed">{addr.city}, {addr.state} — {addr.pincode}</p>
+      <p className="text-xs text-gray-400">{addr.country}</p>
       <button
-        onClick={handleDelete}
+        onClick={() => { if (window.confirm("Remove this address?")) dispatch(deleteAddress(addr._id)); }}
         disabled={isDeleting}
-        className="mt-4 text-xs font-semibold text-red-400 hover:text-red-300 disabled:opacity-50 transition-colors"
+        className="mt-4 text-xs font-semibold text-red-400 hover:text-red-500 disabled:opacity-50 transition-colors"
       >
         {isDeleting ? "Removing…" : "✕ Remove"}
       </button>
@@ -187,21 +161,33 @@ function AddressCard({ addr }) {
 // ─── Order Row ────────────────────────────────────────────────────────────────
 function OrderRow({ order }) {
   const s = STATUS[order.status] ?? STATUS.Pending;
+
+  const date = order.createdAt
+    ? new Date(order.createdAt).toLocaleDateString("en-IN", {
+        day: "2-digit", month: "short", year: "numeric",
+      })
+    : "—";
+
+  const itemCount = Array.isArray(order.items) ? order.items.length : 0;
+  const total     = order.totalAmount ?? order.total ?? "—";
+
   return (
-    <div className="flex items-center justify-between gap-4 bg-slate-800/40 border border-slate-700/60 rounded-xl px-5 py-4 hover:border-slate-600 transition-colors">
+    <div className="flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-xl px-5 py-4 hover:border-gray-300 hover:shadow-sm transition-all">
       <div className="flex flex-col gap-1">
-        <span className="font-mono text-sm font-semibold text-slate-100 tracking-wide">
-          {order.id}
+        <span className="font-mono text-sm font-semibold text-gray-900 tracking-wide">
+          #{order._id?.slice(-6).toUpperCase()}
         </span>
-        <span className="text-xs text-slate-500">
-          {order.date} · {order.items} item{order.items > 1 ? "s" : ""}
+        <span className="text-xs text-gray-400">
+          {date} · {itemCount} item{itemCount !== 1 ? "s" : ""}
         </span>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <span className="font-mono text-sm font-bold text-orange-400">{order.total}</span>
+        {/* ✅ mint green used as highlight on the price */}
+        <span className="text-sm font-bold text-green-500">
+          {typeof total === "number" ? `₹${total.toLocaleString("en-IN")}` : `₹${total}`}
+        </span>
         <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${s.pill}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-          {order.status}
+          <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{order.status}
         </span>
       </div>
     </div>
@@ -211,17 +197,27 @@ function OrderRow({ order }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function UserProfile() {
   const dispatch = useDispatch();
+
   const { addresses, addressesLoading, loggingOut } = useSelector((s) => s.profile);
+  const user          = useSelector((s) => s.auth.user);
+  const myOrders      = useSelector((s) => s.order.myOrders);
+  const ordersLoading = useSelector((s) => s.order.loading);
 
-  // Swap with your real user selector if available
-  const user = useSelector((s) => s.auth?.user) ?? { name: "Alex Johnson", email: "alex@example.com" };
-  const initials = user.name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() ?? "U";
+  // ✅ Name only — never phone as display name
+  const displayName = user?.name || "User";
+  const initials = displayName
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
-  const [showAddForm, setShowAddForm]   = useState(false);
-  const [showOrders, setShowOrders]     = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showOrders, setShowOrders]   = useState(false);
 
   useEffect(() => {
     dispatch(fetchAddresses());
+    dispatch(getMyOrders());
   }, [dispatch]);
 
   const handleLogout = async () => {
@@ -230,48 +226,49 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-10">
+    <div className="min-h-screen bg-white px-4 py-10">
       <Toast />
-
       <div className="max-w-3xl mx-auto flex flex-col gap-5">
 
-        {/* ── Hero ─────────────────────────────────────── */}
-        <div className="flex flex-wrap items-center gap-5 bg-slate-900 border border-slate-800 rounded-2xl px-8 py-6 shadow-xl">
-          {/* Avatar */}
-          <div className="relative shrink-0">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-500 to-rose-500 blur-md opacity-40" />
-            <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-orange-500 to-rose-500 flex items-center justify-center text-white text-xl font-black shadow-lg">
+        {/* ── Hero ───────────────────────────────────── */}
+        <div className="flex flex-wrap items-center gap-5 bg-white border border-gray-200 rounded-2xl px-8 py-6 shadow-sm">
+          {/* Avatar — neutral dark, initials in white */}
+          <div className="shrink-0">
+            <div className="w-16 h-16 rounded-full bg-gray-900 flex items-center justify-center text-white text-xl font-black shadow-sm">
               {initials}
             </div>
           </div>
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-black text-slate-100 tracking-tight">{user.name}</h1>
-            <p className="text-sm text-slate-400 mt-0.5">{user.email}</p>
+            {/* ✅ Name only */}
+            <h1 className="text-xl font-black text-gray-900 tracking-tight">{displayName}</h1>
+            {/* ✅ mint green on the email/phone as a subtle highlight */}
+            <p className="text-sm text-green-500 mt-0.5 font-medium">
+              {user?.email ?? user?.phone}
+            </p>
           </div>
 
           <button
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="shrink-0 px-5 py-2.5 rounded-xl text-sm font-semibold text-red-400 border border-red-500/40 hover:bg-red-500/10 hover:border-red-400 disabled:opacity-50 transition-all"
+            onClick={handleLogout} disabled={loggingOut}
+            className="shrink-0 px-5 py-2.5 rounded-xl text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 disabled:opacity-50 transition-all"
           >
             {loggingOut ? "…" : "⏻"} {loggingOut ? "Logging out" : "Logout"}
           </button>
         </div>
 
-        {/* ── Addresses ────────────────────────────────── */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl px-8 py-6 shadow-xl">
+        {/* ── Addresses ──────────────────────────────── */}
+        <div className="bg-white border border-gray-200 rounded-2xl px-8 py-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div>
-              <h2 className="text-base font-bold text-slate-100">Saved Addresses</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <h2 className="text-base font-bold text-gray-900">Saved Addresses</h2>
+              <p className="text-xs text-gray-400 mt-0.5">
                 {addresses.length} address{addresses.length !== 1 ? "es" : ""} on file
               </p>
             </div>
             {!showAddForm && (
               <button
                 onClick={() => setShowAddForm(true)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition-colors"
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-900 bg-white border border-gray-900 hover:bg-gray-900 hover:text-white transition-colors"
               >
                 + Add Address
               </button>
@@ -279,51 +276,59 @@ export default function UserProfile() {
           </div>
 
           {addressesLoading ? (
-            <div className="flex items-center gap-2 text-sm text-slate-500 py-8 justify-center">
-              <span className="w-4 h-4 border-2 border-slate-600 border-t-slate-300 rounded-full animate-spin" />
+            <div className="flex items-center gap-2 text-sm text-gray-400 py-8 justify-center">
+              <span className="w-4 h-4 border-2 border-gray-200 border-t-green-400 rounded-full animate-spin" />
               Loading addresses…
             </div>
           ) : addresses.length === 0 && !showAddForm ? (
-            <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-500">
+            <div className="flex flex-col items-center justify-center py-10 gap-2">
               <span className="text-3xl">📍</span>
-              <p className="text-sm font-medium">No addresses saved yet</p>
-              <p className="text-xs text-slate-600">Add one to speed up checkout</p>
+              <p className="text-sm font-medium text-gray-600">No addresses saved yet</p>
+              <p className="text-xs text-gray-400">Add one to speed up checkout</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {addresses.map((addr) => (
-                <AddressCard key={addr._id} addr={addr} />
-              ))}
+              {addresses.map((addr) => <AddressCard key={addr._id} addr={addr} />)}
             </div>
           )}
 
-          {/* Inline add form */}
-          {showAddForm && (
-            <AddAddressForm onCancel={() => setShowAddForm(false)} />
-          )}
+          {showAddForm && <AddAddressForm onCancel={() => setShowAddForm(false)} />}
         </div>
 
-        {/* ── Orders ───────────────────────────────────── */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl px-8 py-6 shadow-xl">
+        {/* ── Orders ─────────────────────────────────── */}
+        <div className="bg-white border border-gray-200 rounded-2xl px-8 py-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-base font-bold text-slate-100">My Orders</h2>
-              <p className="text-xs text-slate-500 mt-0.5">{MOCK_ORDERS.length} orders placed</p>
+              <h2 className="text-base font-bold text-gray-900">My Orders</h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {myOrders.length} order{myOrders.length !== 1 ? "s" : ""} placed
+              </p>
             </div>
             <button
               onClick={() => setShowOrders((p) => !p)}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2"
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition-colors flex items-center gap-2"
             >
               {showOrders ? "Hide" : "Show"} Orders
-              <span className="text-xs opacity-60">{showOrders ? "▲" : "▼"}</span>
+              <span className="text-xs opacity-40">{showOrders ? "▲" : "▼"}</span>
             </button>
           </div>
 
           {showOrders && (
             <div className="flex flex-col gap-2 mt-5">
-              {MOCK_ORDERS.map((order) => (
-                <OrderRow key={order.id} order={order} />
-              ))}
+              {ordersLoading ? (
+                <div className="flex items-center gap-2 text-sm text-gray-400 py-8 justify-center">
+                  <span className="w-4 h-4 border-2 border-gray-200 border-t-green-400 rounded-full animate-spin" />
+                  Loading orders…
+                </div>
+              ) : myOrders.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-2">
+                  <span className="text-3xl">🛍️</span>
+                  <p className="text-sm font-medium text-gray-600">No orders yet</p>
+                  <p className="text-xs text-gray-400">Your orders will appear here once placed</p>
+                </div>
+              ) : (
+                myOrders.map((order) => <OrderRow key={order._id} order={order} />)
+              )}
             </div>
           )}
         </div>
