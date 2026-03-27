@@ -51,7 +51,9 @@ app.get('/', (req, res) => {
 
 
 import authRoutes from './routes/user.route.js'
+import { globalErrorHandler } from './utils/error.utils.js';
 app.use('/api/auth',authLimiter, authRoutes)
 
+app.use(globalErrorHandler);
 
 export default app;

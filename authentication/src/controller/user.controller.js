@@ -5,664 +5,530 @@ import jwt from "jsonwebtoken";
 import genrateOtp from "../utility/genrateOtp.js";
 import { redis } from "../db/redis.js";
 import { publishToQueue } from "../broker/rabbit.js";
+import { AppError, catchAsync } from "../utils/error.utils.js"; // ✅
 
-export async function signUpWithPhone(req, res) {
-  try {
-    const { phone, name, email } = req.body;
+// ─────────────────────────────────────────────────────────────────
+// SIGN UP WITH PHONE — send OTP
+// ─────────────────────────────────────────────────────────────────
+export const signUpWithPhone = catchAsync(async (req, res) => {
+  const { phone, name, email } = req.body;
 
-    const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
+  const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
 
-    let user = await userModel.findOne({ phone: formattedPhone });
+  let user = await userModel.findOne({ phone: formattedPhone });
 
-    if (!user) {
-      user = await userModel.create({
-        phone: formattedPhone,
-        name: name || "",
-        email: email || "",
-        isPhoneVerified: false,
-      });
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    user.phoneOTP = otp;
-    user.phoneOTPExpiry = Date.now() + 15 * 60 * 1000;
-
-    await user.save();
-
-    console.log(`OTP generated for ${formattedPhone}: ${otp}`);
-
-    await sendSms(
-      formattedPhone,
-      `Your verification code is ${otp}. Valid for 15 minutes.`,
-    );
-
-    return res.status(200).json({
-      message: "OTP sent successfully",
-    });
-  } catch (error) {
-    console.error("Send OTP failed:", error.message);
-    return res.status(500).json({
-      message: "Failed to send OTP. Please try again.",
-    });
-  }
-}
-
-export async function signUpVerifyOtp(req, res) {
-  try {
-    const { phone, otp, password } = req.body;
-
-    const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
-
-    if (!formattedPhone || !otp || !password) {
-      return res.status(400).json({
-        message: "Phone, OTP, and password are required",
-      });
-    }
-
-    const user = await userModel
-      .findOne({ phone: formattedPhone })
-      .select("+password +phoneOTP +phoneOTPExpiry");
-
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found. Please request OTP again.",
-      });
-    }
-
-    if (
-      !user.phoneOTP ||
-      user.phoneOTP !== otp ||
-      user.phoneOTPExpiry < Date.now()
-    ) {
-      return res.status(400).json({
-        message: "Invalid or expired OTP",
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    user.password = hashedPassword;
-    user.isPhoneVerified = true;
-    user.phoneOTP = undefined;
-    user.phoneOTPExpiry = undefined;
-    user.lastLogin = new Date();
-
-    await user.save();
-
-    const token = jwt.sign(
-      { userId: user._id, phone: user.phone, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" },
-    );
-
-    await publishToQueue("user_created", {
-      id: user._id,
-      phone: user.phone,
-      name: user.name,
-      email: user.email,
-    });
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: false,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    return res.status(200).json({
-      message: "User verified and registered successfully",
-      user: {
-        id: user._id,
-        phone: user.phone,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isPhoneVerified: user.isPhoneVerified,
-      },
-    });
-  } catch (error) {
-    console.error("Verify OTP error:", error);
-    return res.status(500).json({
-      message: "Failed to verify OTP. Please try again.",
-    });
-  }
-}
-
-export async function signUpWithEmail(req, res) {
-  try {
-    const { phone, email, name, password } = req.body;
-
-    const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
-
-    const isExist = await userModel.findOne({
-      $or: [{ email }, { phone: formattedPhone }],
-    });
-
-    if (isExist) {
-      return res.status(409).json({
-        message: "User with this email or phone already exists",
-      });
-    }
-
-    const hashed = await bcrypt.hash(password, 10);
-
-    const user = await userModel.create({
+  if (!user) {
+    user = await userModel.create({
       phone: formattedPhone,
-      email,
-      name: name || "Guest",
-      password: hashed,
+      name:  name  || "",
+      email: email || "",
       isPhoneVerified: false,
     });
+  }
 
-    const token = jwt.sign(
-      { userId: user._id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" },
-    );
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  user.phoneOTP       = otp;
+  user.phoneOTPExpiry = Date.now() + 15 * 60 * 1000;
+  await user.save();
 
-    await publishToQueue("user_created", {
-      id: user._id,
-      phone: user.phone,
-      name: user.name,
+  console.log(`OTP generated for ${formattedPhone}: ${otp}`);
+
+  await sendSms(
+    formattedPhone,
+    `Your verification code is ${otp}. Valid for 15 minutes.`
+  );
+
+  res.status(200).json({ message: "OTP sent successfully" });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// SIGN UP VERIFY OTP
+// ─────────────────────────────────────────────────────────────────
+export const signUpVerifyOtp = catchAsync(async (req, res) => {
+  const { phone, otp, password } = req.body;
+
+  const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
+
+  if (!formattedPhone || !otp || !password) {
+    throw new AppError("Phone, OTP, and password are required", 400);
+  }
+
+  const user = await userModel
+    .findOne({ phone: formattedPhone })
+    .select("+password +phoneOTP +phoneOTPExpiry");
+
+  if (!user) {
+    throw new AppError("User not found. Please request OTP again.", 404);
+  }
+
+  if (!user.phoneOTP || user.phoneOTP !== otp || user.phoneOTPExpiry < Date.now()) {
+    throw new AppError("Invalid or expired OTP", 400);
+  }
+
+  user.password        = await bcrypt.hash(password, 10);
+  user.isPhoneVerified = true;
+  user.phoneOTP        = undefined;
+  user.phoneOTPExpiry  = undefined;
+  user.lastLogin       = new Date();
+  await user.save();
+
+  const token = jwt.sign(
+    { userId: user._id, phone: user.phone, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  await publishToQueue("user_created", {
+    id:    user._id,
+    phone: user.phone,
+    name:  user.name,
+    email: user.email,
+  });
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure:   false,
+    maxAge:   7 * 24 * 60 * 60 * 1000,
+  });
+
+  res.status(200).json({
+    message: "User verified and registered successfully",
+    user: {
+      id:              user._id,
+      phone:           user.phone,
+      name:            user.name,
+      email:           user.email,
+      role:            user.role,
+      isPhoneVerified: user.isPhoneVerified,
+    },
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// SIGN UP WITH EMAIL
+// ─────────────────────────────────────────────────────────────────
+export const signUpWithEmail = catchAsync(async (req, res) => {
+  const { phone, email, name, password } = req.body;
+
+  const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
+
+  const isExist = await userModel.findOne({
+    $or: [{ email }, { phone: formattedPhone }],
+  });
+
+  if (isExist) {
+    throw new AppError("User with this email or phone already exists", 409);
+  }
+
+  const user = await userModel.create({
+    phone:           formattedPhone,
+    email,
+    name:            name || "Guest",
+    password:        await bcrypt.hash(password, 10),
+    isPhoneVerified: false,
+  });
+
+  const token = jwt.sign(
+    { userId: user._id, email: user.email, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  await publishToQueue("user_created", {
+    id:    user._id,
+    phone: user.phone,
+    name:  user.name,
+    email: user.email,
+  });
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure:   true,
+    maxAge:   7 * 24 * 60 * 60 * 1000,
+  });
+
+  res.status(201).json({
+    message: "User signed up successfully",
+    user: {
+      _id:             user._id,
+      phone:           user.phone,
+      email:           user.email,
+      name:            user.name,
+      isPhoneVerified: user.isPhoneVerified,
+    },
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// LOGIN WITH PHONE — send OTP
+// ─────────────────────────────────────────────────────────────────
+export const loginWithPhone = catchAsync(async (req, res) => {
+  let { phone } = req.body;
+
+  if (phone === undefined || phone === null) {
+    throw new AppError("Phone number is required to login", 400);
+  }
+
+  phone = String(phone).trim().replace(/[^\d+]/g, "");
+
+  if (!/^\+?\d{10,15}$/.test(phone)) {
+    throw new AppError("Invalid phone number format", 400);
+  }
+
+  const formattedPhone = phone.startsWith("+") ? phone : `+91${phone.slice(-10)}`;
+
+  const user = await userModel.findOne({
+    phone:    { $regex: formattedPhone.slice(-10) + "$" },
+    isActive: true,
+  });
+
+  if (!user) {
+    throw new AppError("User not found. Please sign up first.", 404);
+  }
+
+  if (!user.isPhoneVerified) {
+    throw new AppError("Phone number not verified. Please verify to login.", 403);
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  user.phoneOTP       = otp;
+  user.phoneOTPExpiry = Date.now() + 15 * 60 * 1000;
+  await user.save();
+
+  console.log(`Login OTP generated for ${formattedPhone}: ${otp}`);
+
+  await sendSms(
+    formattedPhone,
+    `Your login verification code is ${otp}. Valid for 15 minutes.`
+  );
+
+  res.status(200).json({ message: "Login OTP sent successfully" });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// LOGIN VERIFY OTP
+// ─────────────────────────────────────────────────────────────────
+export const loginVerifyOtp = catchAsync(async (req, res) => {
+  const { phone, otp } = req.body;
+
+  const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
+
+  if (!formattedPhone || !otp) {
+    throw new AppError("Phone and OTP are required", 400);
+  }
+
+  const user = await userModel
+    .findOne({ phone: formattedPhone })
+    .select("+phoneOTP +phoneOTPExpiry");
+
+  if (!user) {
+    throw new AppError("User not found. Please request OTP again.", 404);
+  }
+
+  if (!user.phoneOTP || user.phoneOTP !== otp || user.phoneOTPExpiry < Date.now()) {
+    throw new AppError("Invalid or expired OTP", 400);
+  }
+
+  user.phoneOTP       = undefined;
+  user.phoneOTPExpiry = undefined;
+  user.lastLogin      = new Date();
+  await user.save();
+
+  const token = jwt.sign(
+    { userId: user._id, phone: user.phone, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure:   false,
+    sameSite: "lax",
+    maxAge:   7 * 24 * 60 * 60 * 1000,
+  });
+
+  res.status(200).json({
+    message: "Login successful",
+    user: {
+      _id:             user._id,
+      phone:           user.phone,
+      email:           user.email,
+      name:            user.name,
+      role:            user.role,
+      isPhoneVerified: user.isPhoneVerified,
+      lastLogin:       user.lastLogin,
+    },
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// RESEND OTP
+// ─────────────────────────────────────────────────────────────────
+export const resendOtp = catchAsync(async (req, res) => {
+  const { phone, type } = req.body;
+  const otpType = type || "login";
+
+  if (!phone) {
+    throw new AppError("Phone number is required", 400);
+  }
+
+  const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
+
+  const user = await userModel.findOne({ phone: formattedPhone });
+  if (!user && otpType === "login") {
+    throw new AppError("User not found", 404);
+  }
+
+  const cooldownKey = `otp:cooldown:${otpType}:${formattedPhone}`;
+  const cooldown    = await redis.get(cooldownKey);
+
+  if (cooldown) {
+    throw new AppError("Please wait 60 seconds before resending OTP", 429);
+  }
+
+  const otp       = genrateOtp();
+  const otpKey    = `otp:${otpType}:${formattedPhone}`;
+  const hashedOtp = await bcrypt.hash(otp, 10);
+
+  await redis.set(otpKey,    hashedOtp, "EX", 600);
+  await redis.set(cooldownKey, "1",     "EX", 60);
+
+  await sendSms(formattedPhone, otp);
+
+  res.json({ message: "OTP sent successfully" });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// GOOGLE OAUTH CALLBACK
+// ─────────────────────────────────────────────────────────────────
+export const googleOAuthCallback = catchAsync(async (req, res) => {
+  const googleUser = req.user;
+
+  if (!googleUser) {
+    throw new AppError("Google authentication failed", 401);
+  }
+
+  const email = googleUser.emails?.[0]?.value;
+  if (!email) {
+    throw new AppError("Google account has no email", 400);
+  }
+
+  const name =
+    googleUser.displayName ||
+    `${googleUser.name?.givenName ?? ""} ${googleUser.name?.familyName ?? ""}`.trim();
+
+  let user = await userModel.findOne({
+    $or: [{ email }, { googleId: googleUser.id }],
+  });
+
+  const isNewUser = !user;
+
+  if (!user) {
+    user = await userModel.create({
+      email,
+      googleId:     googleUser.id,
+      name,
+      authProvider: "google",
+    });
+  }
+
+  await publishToQueue("user_created", {
+    id:    user._id,
+    phone: user.phone,
+    name:  user.name,
+    email: user.email,
+  });
+
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "2d" }
+  );
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure:   false, // set true in production
+  });
+
+  res.status(200).json({
+    message: isNewUser ? "User registered successfully" : "User logged in successfully",
+    user: {
+      id:    user._id,
       email: user.email,
-    });
+      name:  user.name,
+    },
+  });
+});
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+// ─────────────────────────────────────────────────────────────────
+// FORGET / RESET PASSWORD — to be implemented
+// ─────────────────────────────────────────────────────────────────
+export const forgetPassword = catchAsync(async (req, res) => {
+  throw new AppError("Forget password not implemented yet", 501);
+});
 
-    return res.status(201).json({
-      message: "User signed up successfully",
-      user: {
-        _id: user._id,
-        phone: user.phone,
-        email: user.email,
-        name: user.name,
-        isPhoneVerified: user.isPhoneVerified,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Failed to sign up with email. Please try again.",
-    });
-  }
-}
+export const resetPassword = catchAsync(async (req, res) => {
+  throw new AppError("Reset password not implemented yet", 501);
+});
 
-export async function loginWithPhone(req, res) {
-  try {
-    let { phone } = req.body;
+// ─────────────────────────────────────────────────────────────────
+// GET ME
+// ─────────────────────────────────────────────────────────────────
+export const getMe = catchAsync(async (req, res) => {
+  res.status(200).json({ user: req.user });
+});
 
-    if (phone === undefined || phone === null) {
-      return res.status(400).json({
-        message: "Phone number is required to login",
-      });
-    }
+// ─────────────────────────────────────────────────────────────────
+// LOGOUT
+// ─────────────────────────────────────────────────────────────────
+export const logout = catchAsync(async (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure:   true,
+    sameSite: "strict",
+  });
 
-    // Force string safely
-    phone = String(phone).trim();
+  res.status(200).json({ message: "Logged out successfully" });
+});
 
-    // Remove spaces, dashes, brackets
-    phone = phone.replace(/[^\d+]/g, "");
+// ─────────────────────────────────────────────────────────────────
+// ADMIN — USER MANAGEMENT
+// ─────────────────────────────────────────────────────────────────
 
-    // Validate numeric phone
-    if (!/^\+?\d{10,15}$/.test(phone)) {
-      return res.status(400).json({
-        message: "Invalid phone number format",
-      });
-    }
+export const getUserCount = catchAsync(async (req, res) => {
+  const totalUsers = await userModel.countDocuments();
+  res.json({ totalUsers });
+});
 
-    // Normalize to +91 format
-    const formattedPhone = phone.startsWith("+")
-      ? phone
-      : `+91${phone.slice(-10)}`;
+export const getUser = catchAsync(async (req, res) => {
+  const { page = 1, limit = 10, search = "", role } = req.query;
 
-    console.log("Searching phone:", formattedPhone);
+  const pageNum  = Number(page);
+  const limitNum = Number(limit);
 
-    // Flexible DB search (handles bad stored data)
-    const user = await userModel.findOne({
-      phone: { $regex: formattedPhone.slice(-10) + "$" },
-      isActive: true,
-    });
+  const filter = {
+    ...(role && { role }),
+    ...(search && {
+      $or: [
+        { name:  { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ],
+    }),
+  };
 
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found. Please sign up first.",
-      });
-    }
-
-    if (!user.isPhoneVerified) {
-      return res.status(403).json({
-        message: "Phone number not verified. Please verify to login.",
-      });
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    user.phoneOTP = otp;
-    user.phoneOTPExpiry = Date.now() + 15 * 60 * 1000;
-
-    await user.save();
-
-    console.log(`Login OTP generated for ${formattedPhone}: ${otp}`);
-
-    await sendSms(
-      formattedPhone,
-      `Your login verification code is ${otp}. Valid for 15 minutes.`,
-    );
-
-    return res.status(200).json({
-      message: "Login OTP sent successfully",
-    });
-  } catch (error) {
-    console.error("LOGIN PHONE ERROR:", error);
-
-    return res.status(500).json({
-      message: "Failed to login with phone. Please try again.",
-      error: error.message,
-    });
-  }
-}
-
-export async function loginVerifyOtp(req, res) {
-  try {
-    const { phone, otp } = req.body;
-
-    const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
-
-    if (!formattedPhone || !otp) {
-      return res.status(400).json({
-        message: "phone and Otp are required",
-      });
-    }
-
-    const user = await userModel
-      .findOne({
-        phone: formattedPhone,
-      })
-      .select("+phoneOTP +phoneOTPExpiry");
-
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found. Please request OTP again.",
-      });
-    }
-
-    if (
-      !user.phoneOTP ||
-      user.phoneOTP !== otp ||
-      user.phoneOTPExpiry < Date.now()
-    ) {
-      return res.status(400).json({
-        message: "Invalid or expired OTP",
-      });
-    }
-
-    user.phoneOTP = undefined;
-    user.phoneOTPExpiry = undefined;
-    user.lastLogin = new Date();
-
-    await user.save();
-
-    const token = jwt.sign(
-      { userId: user._id, phone: user.phone, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" },
-    );
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    return res.status(200).json({
-      message: "Login successful",
-      user: {
-        _id: user._id,
-        phone: user.phone,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        isPhoneVerified: user.isPhoneVerified,
-        lastLogin: user.lastLogin,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Failed to verify login OTP. Please try again.",
-    });
-  }
-}
-
-export async function resendOtp(req, res) {
-  try {
-    const { phone, type } = req.body;
-    const otpType = type || "login";
-
-    if (!phone) {
-      return res.status(400).json({
-        message: "Phone number is required",
-      });
-    }
-
-    const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
-
-    const user = await userModel.findOne({ phone: formattedPhone });
-    if (!user && otpType === "login") {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    const otpKey = `otp:${otpType}:${formattedPhone}`;
-    const cooldownKey = `otp:cooldown:${otpType}:${formattedPhone}`;
-
-    const cooldown = await redis.get(cooldownKey);
-    if (cooldown) {
-      return res.status(429).json({
-        success: false,
-        message: "Please wait 60 seconds before resending OTP",
-      });
-    }
-
-    const otp = genrateOtp();
-    const hashedOtp = await bcrypt.hash(otp, 10);
-
-    await redis.set(otpKey, hashedOtp, "EX", 600);
-    await redis.set(cooldownKey, "1", "EX", 60);
-
-    await sendSms(formattedPhone, otp);
-
-    return res.json({
-      message: "OTP sent successfully",
-    });
-  } catch (error) {
-    console.error("Resend OTP Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
-  }
-}
-
-export async function googleOAuthCallback(req, res) {
-  try {
-    const googleUser = req.user;
-
-    if (!googleUser) {
-      return res.status(401).json({ message: "Google authentication failed" });
-    }
-
-    const email = googleUser.emails?.[0]?.value;
-    if (!email) {
-      return res.status(400).json({ message: "Google account has no email" });
-    }
-
-    const name =
-      googleUser.displayName ||
-      `${googleUser.name?.givenName ?? ""} ${googleUser.name?.familyName ?? ""}`.trim();
-
-    let isUserAlreadyExist = await userModel.findOne({
-      $or: [{ email }, { googleId: googleUser.id }],
-    });
-
-    let user;
-
-    if (isUserAlreadyExist) {
-      user = isUserAlreadyExist;
-    } else {
-      user = await userModel.create({
-        email,
-        googleId: googleUser.id,
-        name,
-        authProvider: "google",
-      });
-    }
-
-    console.log("GOOGLE EMAIL:", email);
-    await publishToQueue("user_created", {
-      id: user._id,
-      phone: user.phone,
-      name: user.name,
-      email: user.email,
-    });
-
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "2d" },
-    );
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false, // true in prod
-    });
-
-    return res.status(200).json({
-      message: isUserAlreadyExist
-        ? "User logged in successfully"
-        : "User registered successfully",
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-      },
-    });
-  } catch (error) {
-    console.error("Google Auth Callback error:", error);
-    return res.status(500).json({
-      message: "Internal Server Error",
-    });
-  }
-}
-
-export async function forgetPassword(req, res) {}
-
-export async function resetPassword(req, res) {}
-
-export async function getMe(req, res) {
-  try {
-    return res.status(200).json({
-      user: req.user,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Failed to fetch user",
-    });
-  }
-}
-
-export function logout(req, res) {
-  try {
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-    });
-
-    return res.status(200).json({
-      message: "Logged out successfully",
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Logout failed",
-    });
-  }
-}
-
-export const getUserCount = async (req, res) => {
-  try {
-    const totalUsers = await userModel.countDocuments();
-    res.json({ totalUsers });
-  } catch (err) {
-    res.status(500).json({ message: "Error fetching user count" });
-  }
-};
-
-export const getUser = async (req, res) => {
-  try {
-    const { page = 1, limit = 10, search = "", role } = req.query;
-
-    const pageNum = Number(page);
-    const limitNum = Number(limit);
-
-    const filter = {
-      ...(role && { role }),
-      ...(search && {
-        $or: [
-          { name: { $regex: search, $options: "i" } },
-          { email: { $regex: search, $options: "i" } },
-        ],
-      }),
-    };
-
-    const users = await userModel
+  const [users, total] = await Promise.all([
+    userModel
       .find(filter)
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum)
       .sort({ createdAt: -1 })
-      .select("-password");
+      .select("-password"),
+    userModel.countDocuments(filter),
+  ]);
 
-    const total = await userModel.countDocuments(filter);
+  res.status(200).json({
+    success:    true,
+    users,
+    total,
+    page:       pageNum,
+    totalPages: Math.ceil(total / limitNum),
+  });
+});
 
-    res.status(200).json({
-      success: true,
-      users,
-      total,
-      page: pageNum,
-      totalPages: Math.ceil(total / limitNum),
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+export const getUserById = catchAsync(async (req, res) => {
+  const user = await userModel.findById(req.params.id).select("-password");
+
+  if (!user) {
+    throw new AppError("User not found", 404);
   }
-};
 
-export const getUserById = async (req, res) => {
-  try {
-    const user = await userModel.findById(req.params.id).select("-password");
+  res.json(user);
+});
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+export const deleteUser = catchAsync(async (req, res) => {
+  const user = await userModel.findByIdAndDelete(req.params.id);
 
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (!user) {
+    throw new AppError("User not found", 404);
   }
-};
 
-export const deleteUser = async (req, res) => {
-  try {
-    const user = await userModel.findByIdAndDelete(req.params.id);
+  res.json({ success: true, message: "User deleted successfully" });
+});
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+export const blockUser = catchAsync(async (req, res) => {
+  const user = await userModel.findById(req.params.id);
 
-    res.json({
-      success: true,
-      message: "User deleted successfully",
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (!user) {
+    throw new AppError("User not found", 404);
   }
-};
 
-export const blockUser = async (req, res) => {
-  try {
-    const user = await userModel.findById(req.params.id);
+  user.isBlocked = !user.isBlocked;
+  await user.save();
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+  res.json({
+    success: true,
+    message: `User ${user.isBlocked ? "blocked" : "unblocked"}`,
+    user,
+  });
+});
 
-    user.isBlocked = !user.isBlocked;
-    await user.save();
+export const getUserAddresses = catchAsync(async (req, res) => {
+  const user = await userModel.findById(req.user.id).select("addresses");
 
-    res.json({
-      success: true,
-      message: `User ${user.isBlocked ? "blocked" : "unblocked"}`,
-      user,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (!user) {
+    throw new AppError("User not found", 404);
   }
-};
 
-export const getUserAddresses = async (req, res) => {
-  const id = req.user.id;
-
-  const user = await userModel.findById(id).select("addresses");
-
-  if (!user) return res.status(404).json({ message: "User not found" });
-
-  return res.status(200).json({
-    message: "Addresses fetched successfully",
+  res.status(200).json({
+    message:   "Addresses fetched successfully",
     addresses: user.addresses,
   });
-};
+});
 
-export const addUserAddress = async (req, res) => {
-  const id = req.user.id;
-
+export const addUserAddress = catchAsync(async (req, res) => {
   const { street, city, state, pincode, country, isDefault } = req.body;
 
-  const user = await userModel.findOneAndUpdate(
-    { _id: id },
-    {
-      $push: {
-        addresses: {
-          street,
-          city,
-          state,
-          pincode,
-          country,
-          isDefault,
-        },
-      },
-    },
-    { new: true },
-  );
-
-  if (!user) return res.status(404).json({ message: "User not found" });
-
-  return res.status(201).json({
-    message: "Address added successfully",
-    address: user.addresses[user.addresses.length - 1],
-  });
-};
-
-export const deleteUserAddress = async (req, res) => {
-  const id = req.user.id;
-  const { addressId } = req.params;
-
-  const isAddresesExists = await userModel.findOne({
-    _id: id,
-    "addresses._id": addressId,
-  });
-
-  if (!isAddresesExists) {
-    return res.status(404).json({ message: "Address not found" });
-  }
-
-  const user = await userModel.findOneAndUpdate(
-    { _id: id },
-    { $pull: { addresses: { _id: addressId } } },
-    { new: true },
+  const user = await userModel.findByIdAndUpdate(
+    req.user.id,
+    { $push: { addresses: { street, city, state, pincode, country, isDefault } } },
+    { new: true }
   );
 
   if (!user) {
-    return res.status(404).json({ message: "User not found" });
+    throw new AppError("User not found", 404);
   }
 
-  const addressExists = user.addresses.some(
-    (addr) => addr._id.toString() === addressId,
+  res.status(201).json({
+    message: "Address added successfully",
+    address: user.addresses[user.addresses.length - 1],
+  });
+});
+
+export const deleteUserAddress = catchAsync(async (req, res) => {
+  const { addressId } = req.params;
+
+  const addressExists = await userModel.findOne({
+    _id:            req.user.id,
+    "addresses._id": addressId,
+  });
+
+  if (!addressExists) {
+    throw new AppError("Address not found", 404);
+  }
+
+  const user = await userModel.findByIdAndUpdate(
+    req.user.id,
+    { $pull: { addresses: { _id: addressId } } },
+    { new: true }
   );
-  if (addressExists) {
-    return res.status(404).json({ message: "Address not found" });
+
+  if (!user) {
+    throw new AppError("User not found", 404);
   }
 
-  return res.status(200).json({
-    message: "Address deleted successfully",
+  res.status(200).json({
+    message:   "Address deleted successfully",
     addresses: user.addresses,
   });
-};
+});

@@ -5,6 +5,7 @@ import {
   applySecurityMiddleware,
   paymentLimiter,
 } from "./middleware/Security.middleware.js";
+import { globalErrorHandler } from './utils/error.utils.js';
 
 const app = express();
 
@@ -26,5 +27,8 @@ app.get("/", (req, res) => {
 
 import paymentRoute from "../src/routes/paymenr.route.js";
 app.use("/api/payments", paymentLimiter, paymentRoute);
+
+
+app.use(globalErrorHandler);
 
 export default app;

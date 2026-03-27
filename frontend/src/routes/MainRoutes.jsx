@@ -18,68 +18,114 @@ import CheckoutPage from "../pages/order/CheckoutPage";
 import PaymentPage from "../pages/order/PaymentPage";
 import Orders from "../pages/admin/Orders";
 import CategoryManagement from "../pages/admin/CategoryManagement";
-import CategorySection from "../components/CategorySection";
+import CategorySection from "../components/Categorysection";
 import CategoryProducts from "../pages/CategoryProducts";
+import ErrorBoundary from "../components/Errorboundary";
 
 const MainRoutes = () => {
   return (
     <div>
       <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/sign-up" element={<SignUp />} />
-        <Route path="/blog" element={<BlogPage />} />
-        <Route path="/about-us" element={<AboutUs />} />
+ 
+        {/* ── Static routes — no ErrorBoundary needed ── */}
+        <Route path="/"          element={<Home />} />  {/* Home has its own ErrorBoundary per section */}
+        <Route path="/login"     element={<Login />} />
+        <Route path="/sign-up"   element={<SignUp />} />
+        <Route path="/blog"      element={<BlogPage />} />
+        <Route path="/about-us"  element={<AboutUs />} />
         <Route path="/contact-us" element={<ContactUs />} />
-        <Route path="/product" element={<Products />} />
-        <Route path="/product/:id" element={<ProdectDetail />} />
-        <Route path="/shop-by-category" element={<CategorySection />} />
-        <Route path="/category/:slug" element={<CategoryProducts />} />
-
-        {/* User protected routes */}
-        <Route
-          path="/user-profile"
-          element={
-            <AuthRoute role="user">
+ 
+        {/* ── Data-fetching public routes — wrap with ErrorBoundary ── */}
+        <Route path="/product" element={
+          <ErrorBoundary message="Products page failed to load. Please refresh.">
+            <Products />
+          </ErrorBoundary>
+        } />
+ 
+        <Route path="/product/:id" element={
+          <ErrorBoundary message="Product details failed to load. Please try again.">
+            <ProdectDetail />
+          </ErrorBoundary>
+        } />
+ 
+        <Route path="/shop-by-category" element={
+          <ErrorBoundary message="Categories failed to load. Please refresh.">
+            <CategorySection />
+          </ErrorBoundary>
+        } />
+ 
+        <Route path="/category/:slug" element={
+          <ErrorBoundary message="Category products failed to load. Please refresh.">
+            <CategoryProducts />
+          </ErrorBoundary>
+        } />
+ 
+        {/* ── User protected routes ── */}
+        <Route path="/user-profile" element={
+          <AuthRoute role="user">
+            <ErrorBoundary message="Profile failed to load. Please refresh.">
               <UserProfile />
-            </AuthRoute>
-          }
-        />
-        <Route
-          path="/checkout"
-          element={
-            <AuthRoute role="user">
+            </ErrorBoundary>
+          </AuthRoute>
+        } />
+ 
+        <Route path="/checkout" element={
+          <AuthRoute role="user">
+            <ErrorBoundary message="Checkout failed to load. Please refresh.">
               <CheckoutPage />
-            </AuthRoute>
-          }
-        />
-        <Route
-          path="/checkout/payment"
-          element={
-            <AuthRoute role="user">
+            </ErrorBoundary>
+          </AuthRoute>
+        } />
+ 
+        <Route path="/checkout/payment" element={
+          <AuthRoute role="user">
+            <ErrorBoundary message="Payment page failed to load. Please refresh.">
               <PaymentPage />
-            </AuthRoute>
-          }
-        />
-
-        {/* Admin protected routes — layout wraps once */}
-        <Route
-          path="/admin"
-          element={
-            <AuthRoute role="admin">
+            </ErrorBoundary>
+          </AuthRoute>
+        } />
+ 
+        {/* ── Admin protected routes ── */}
+        <Route path="/admin" element={
+          <AuthRoute role="admin">
+            <ErrorBoundary message="Admin panel failed to load. Please refresh.">
               <AdminLayout />
-            </AuthRoute>
-          }
-        >
+            </ErrorBoundary>
+          </AuthRoute>
+        }>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="users" element={<Users />} />
-          <Route path="/admin/categories" element={<CategoryManagement />} />
+ 
+          <Route path="dashboard" element={
+            <ErrorBoundary message="Dashboard failed to load.">
+              <Dashboard />
+            </ErrorBoundary>
+          } />
+ 
+          <Route path="products" element={
+            <ErrorBoundary message="Products management failed to load.">
+              <AdminProducts />
+            </ErrorBoundary>
+          } />
+ 
+          <Route path="orders" element={
+            <ErrorBoundary message="Orders failed to load.">
+              <Orders />
+            </ErrorBoundary>
+          } />
+ 
+          <Route path="users" element={
+            <ErrorBoundary message="Users failed to load.">
+              <Users />
+            </ErrorBoundary>
+          } />
+ 
+          <Route path="/admin/categories" element={
+            <ErrorBoundary message="Category management failed to load.">
+              <CategoryManagement />
+            </ErrorBoundary>
+          } />
         </Route>
-
+ 
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </div>

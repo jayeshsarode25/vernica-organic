@@ -3,6 +3,8 @@ import cookieParser from "cookie-parser";
 import orderRoutes from "../src/routes/order.route.js";
 import cors from "cors";
 import { applySecurityMiddleware } from './middleware/Security.middleware.js';
+import {globalErrorHandler} from './utils/error.utils.js'
+
 
 const app = express();
 app.use(
@@ -23,5 +25,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/orders", orderRoutes);
+
+app.use(globalErrorHandler)
 
 export default app;

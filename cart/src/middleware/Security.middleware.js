@@ -1,13 +1,12 @@
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import mongoSanitize from "express-mongo-sanitize"; // ✅ NoSQL injection protection
-import hpp from "hpp";                               // ✅ HTTP parameter pollution protection
+import { sanitize } from "express-mongo-sanitize"; // ✅ import sanitize fn directly
+import hpp from "hpp";
 
 // ─────────────────────────────────────────────────────────────────
 // RATE LIMITERS
 // ─────────────────────────────────────────────────────────────────
 
-// General API — 100 requests per 15 min per IP
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -16,7 +15,6 @@ export const generalLimiter = rateLimit({
   message: { message: "Too many requests, please try again later." },
 });
 
-// Auth routes — stricter: 10 attempts per 15 min (stops brute force)
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -25,7 +23,6 @@ export const authLimiter = rateLimit({
   message: { message: "Too many login attempts, please try again later." },
 });
 
-// Payment routes — very strict: 20 per 15 min
 export const paymentLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -35,7 +32,7 @@ export const paymentLimiter = rateLimit({
 });
 
 // ─────────────────────────────────────────────────────────────────
-// HELMET — secure HTTP headers
+// HELMET
 // ─────────────────────────────────────────────────────────────────
 
 export const helmetConfig = helmet({
@@ -53,33 +50,43 @@ export const helmetConfig = helmet({
 });
 
 // ─────────────────────────────────────────────────────────────────
-// APPLY ALL — one call in each service's app.js
-//
-// IMPORTANT: call applySecurityMiddleware(app) AFTER app.use(express.json())
-// so req.body is parsed before mongoSanitize runs
+// MANUAL MONGO SANITIZE MIDDLEWARE
+// Fixes: "Cannot set property query which has only a getter"
+// Instead of app.use(mongoSanitize()) which tries to overwrite req.query,
+// we manually sanitize req.body and req.params only,
+// and sanitize req.query values without reassigning the property.
+// ─────────────────────────────────────────────────────────────────
+
+const manualSanitize = (req, res, next) => {
+  // sanitize body
+  if (req.body) {
+    req.body = sanitize(req.body, { replaceWith: "_" });
+  }
+
+  // sanitize params
+  if (req.params) {
+    req.params = sanitize(req.params, { replaceWith: "_" });
+  }
+
+  // ✅ sanitize query values in place — never reassign req.query itself
+  if (req.query) {
+    const sanitized = sanitize({ ...req.query }, { replaceWith: "_" });
+    Object.keys(sanitized).forEach((key) => {
+      req.query[key] = sanitized[key];
+    });
+  }
+
+  next();
+};
+
+// ─────────────────────────────────────────────────────────────────
+// APPLY ALL
 // ─────────────────────────────────────────────────────────────────
 
 export const applySecurityMiddleware = (app) => {
-  // 1. Secure headers
   app.use(helmetConfig);
-
-  // 2. Rate limiting
   app.use(generalLimiter);
-
-  // 3. Strip $ and . operators from req.body, req.query, req.params
-  //    replaceWith: "_" keeps the key but neutralizes the operator
-  //    onSanitize: logs when an attack attempt is caught
-  app.use(
-    mongoSanitize({
-      replaceWith: "_",
-      onSanitize: ({ req, key }) => {
-        console.warn(`⚠️  NoSQL injection attempt — key [${key}] from IP ${req.ip}`);
-      },
-    })
-  );
-
-  // 4. Prevent HTTP parameter pollution
-  //    whitelist allows these params to have multiple values legitimately
+  app.use(manualSanitize); // ✅ replaces app.use(mongoSanitize())
   app.use(
     hpp({
       whitelist: ["sort", "skip", "limit", "minPrice", "maxPrice", "categoryId"],

@@ -1,304 +1,169 @@
 import mongoose from "mongoose";
 import categoryModel from "../model/category.model.js";
+import { AppError, catchAsync } from "../utils/error.utils.js"; // ✅
 
-// ====================================
-// GET ALL CATEGORIES (PUBLIC)
-// ====================================
-export const getCategories = async (req, res) => {
-  try {
-    const categories = await categoryModel
-      .find({ isActive: true })
-      .sort({ displayOrder: 1 })
-      .lean();
+// ── shared slug generator ──────────────────────────────────────────
+const generateSlug = (name) =>
+  name
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 
-    res.json({
-      success: true,
-      message: "Categories retrieved successfully",
-      count: categories.length,
-      data: categories,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch categories",
-      error: error.message,
-    });
+// ─────────────────────────────────────────────────────────────────
+// GET ALL CATEGORIES (public)
+// ─────────────────────────────────────────────────────────────────
+export const getCategories = catchAsync(async (req, res) => {
+  const categories = await categoryModel
+    .find({ isActive: true })
+    .sort({ displayOrder: 1 })
+    .lean();
+
+  res.json({
+    success: true,
+    message: "Categories retrieved successfully",
+    count:   categories.length,
+    data:    categories,
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// GET CATEGORY BY ID (public)
+// ─────────────────────────────────────────────────────────────────
+export const getCategoryById = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new AppError("Invalid category ID", 400);
   }
-};
 
-// ====================================
-// GET CATEGORY BY ID (PUBLIC)
-// ====================================
-export const getCategoryById = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid category ID",
-      });
-    }
-
-    const category = await categoryModel.findById(id).lean();
-
-    if (!category) {
-      return res.status(404).json({
-        success: false,
-        message: "Category not found",
-      });
-    }
-
-    res.json({
-      success: true,
-      message: "Category retrieved successfully",
-      data: category,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch category",
-      error: error.message,
-    });
+  const category = await categoryModel.findById(id).lean();
+  if (!category) {
+    throw new AppError("Category not found", 404);
   }
-};
 
-// ====================================
-// GET CATEGORY BY SLUG (PUBLIC)
-// ====================================
-export const getCategoryBySlug = async (req, res) => {
-  try {
-    const { slug } = req.params;
+  res.json({ success: true, message: "Category retrieved successfully", data: category });
+});
 
-    const category = await categoryModel
-      .findOne({
-        slug: slug.toLowerCase(),
-        isActive: true,
-      })
-      .lean();
+// ─────────────────────────────────────────────────────────────────
+// GET CATEGORY BY SLUG (public)
+// ─────────────────────────────────────────────────────────────────
+export const getCategoryBySlug = catchAsync(async (req, res) => {
+  const { slug } = req.params;
 
-    if (!category) {
-      return res.status(404).json({
-        success: false,
-        message: "Category not found",
-      });
-    }
+  const category = await categoryModel
+    .findOne({ slug: slug.toLowerCase(), isActive: true })
+    .lean();
 
-    res.json({
-      success: true,
-      message: "Category retrieved successfully",
-      data: category,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch category",
-      error: error.message,
-    });
+  if (!category) {
+    throw new AppError("Category not found", 404);
   }
-};
 
-// ====================================
-// CREATE CATEGORY (ADMIN ONLY)
-// ====================================
-export const createCategory = async (req, res) => {
-  try {
-    const { name, description, displayOrder } = req.body;
+  res.json({ success: true, message: "Category retrieved successfully", data: category });
+});
 
-    // Validation
-    if (!name || !description) {
-      return res.status(400).json({
-        success: false,
-        message: "Name and description are required",
-      });
-    }
+// ─────────────────────────────────────────────────────────────────
+// CREATE CATEGORY (admin)
+// ─────────────────────────────────────────────────────────────────
+export const createCategory = catchAsync(async (req, res) => {
+  const { name, description, displayOrder } = req.body;
 
-    if (name.length < 3) {
-      return res.status(400).json({
-        success: false,
-        message: "Category name must be at least 3 characters",
-      });
-    }
+  if (!name || !description) {
+    throw new AppError("Name and description are required", 400);
+  }
 
-    if (description.length < 10) {
-      return res.status(400).json({
-        success: false,
-        message: "Description must be at least 10 characters",
-      });
-    }
+  if (name.length < 3) {
+    throw new AppError("Category name must be at least 3 characters", 400);
+  }
 
-    // Check if category already exists
-    const existingCategory = await categoryModel.findOne({
+  if (description.length < 10) {
+    throw new AppError("Description must be at least 10 characters", 400);
+  }
+
+  const existingCategory = await categoryModel.findOne({
+    name: { $regex: `^${name}$`, $options: "i" },
+  });
+
+  if (existingCategory) {
+    throw new AppError("Category with this name already exists", 409);
+  }
+
+  const newCategory = await categoryModel.create({
+    name,
+    description,
+    slug:         generateSlug(name),
+    displayOrder: displayOrder || 0,
+  });
+
+  res.status(201).json({
+    success: true,
+    message: "Category created successfully",
+    data:    newCategory,
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// UPDATE CATEGORY (admin)
+// ─────────────────────────────────────────────────────────────────
+export const updateCategory = catchAsync(async (req, res) => {
+  const { id }                                    = req.params;
+  const { name, description, displayOrder, isActive } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new AppError("Invalid category ID", 400);
+  }
+
+  const category = await categoryModel.findById(id);
+  if (!category) {
+    throw new AppError("Category not found", 404);
+  }
+
+  // check name uniqueness if name is changing
+  if (name && name !== category.name) {
+    const existing = await categoryModel.findOne({
       name: { $regex: `^${name}$`, $options: "i" },
+      _id:  { $ne: id },
     });
-
-    if (existingCategory) {
-      return res.status(400).json({
-        success: false,
-        message: "Category with this name already exists",
-      });
+    if (existing) {
+      throw new AppError("Category with this name already exists", 409);
     }
-
-    // ⭐ GENERATE SLUG HERE (NOT IN PRE-HOOK)
-    const slug = name
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-");
-
-    const newCategory = new categoryModel({
-      name,
-      description,
-      slug, // ⭐ Add slug here
-      displayOrder: displayOrder || 0,
-    });
-
-    await newCategory.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Category created successfully",
-      data: newCategory,
-    });
-  } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: "Category with this name already exists",
-      });
-    }
-    res.status(500).json({
-      success: false,
-      message: "Failed to create category",
-      error: error.message,
-    });
   }
-};
 
-// ====================================
-// UPDATE CATEGORY (ADMIN ONLY)
-// ====================================
-export const updateCategory = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, description, displayOrder, isActive } = req.body;
-
-    // Validate ID
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid category ID",
-      });
-    }
-
-    // Check if category exists
-    const category = await categoryModel.findById(id);
-    if (!category) {
-      return res.status(404).json({
-        success: false,
-        message: "Category not found",
-      });
-    }
-
-    // Check if new name already exists (if name is being changed)
-    if (name && name !== category.name) {
-      const existingCategory = await categoryModel.findOne({
-        name: { $regex: `^${name}$`, $options: "i" },
-        _id: { $ne: id },
-      });
-      if (existingCategory) {
-        return res.status(400).json({
-          success: false,
-          message: "Category with this name already exists",
-        });
-      }
-    }
-
-    // Validate inputs
-    if (name && name.length < 3) {
-      return res.status(400).json({
-        success: false,
-        message: "Category name must be at least 3 characters",
-      });
-    }
-
-    if (description && description.length < 10) {
-      return res.status(400).json({
-        success: false,
-        message: "Description must be at least 10 characters",
-      });
-    }
-
-    // Update fields only if provided
-    if (name) {
-      category.name = name;
-      // ⭐ REGENERATE SLUG WHEN NAME CHANGES
-      category.slug = name
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-");
-    }
-    if (description) category.description = description;
-    if (displayOrder !== undefined) category.displayOrder = displayOrder;
-    if (isActive !== undefined) category.isActive = isActive;
-
-    await category.save();
-
-    res.json({
-      success: true,
-      message: "Category updated successfully",
-      data: category,
-    });
-  } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: "Category with this name already exists",
-      });
-    }
-    res.status(500).json({
-      success: false,
-      message: "Failed to update category",
-      error: error.message,
-    });
+  if (name && name.length < 3) {
+    throw new AppError("Category name must be at least 3 characters", 400);
   }
-};
 
-// ====================================
-// DELETE CATEGORY (ADMIN ONLY)
-// ====================================
-export const deleteCategory = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Validate ID
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid category ID",
-      });
-    }
-
-    const category = await categoryModel.findByIdAndDelete(id);
-
-    if (!category) {
-      return res.status(404).json({
-        success: false,
-        message: "Category not found",
-      });
-    }
-
-    res.json({
-      success: true,
-      message: "Category deleted successfully",
-      data: category,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to delete category",
-      error: error.message,
-    });
+  if (description && description.length < 10) {
+    throw new AppError("Description must be at least 10 characters", 400);
   }
-};
+
+  if (name) {
+    category.name = name;
+    category.slug = generateSlug(name); // regenerate slug when name changes
+  }
+  if (description)             category.description  = description;
+  if (displayOrder !== undefined) category.displayOrder = displayOrder;
+  if (isActive     !== undefined) category.isActive     = isActive;
+
+  await category.save();
+
+  res.json({ success: true, message: "Category updated successfully", data: category });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// DELETE CATEGORY (admin)
+// ─────────────────────────────────────────────────────────────────
+export const deleteCategory = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new AppError("Invalid category ID", 400);
+  }
+
+  const category = await categoryModel.findByIdAndDelete(id);
+  if (!category) {
+    throw new AppError("Category not found", 404);
+  }
+
+  res.json({ success: true, message: "Category deleted successfully", data: category });
+});

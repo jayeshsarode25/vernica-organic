@@ -4,6 +4,7 @@ import cors from "cors";
 import productRoutes from "./routes/product.route.js";
 import categoryRoute from "./routes/Category.routes.js";
 import { applySecurityMiddleware } from "./middleware/Security.middleware .js";
+import { globalErrorHandler } from "./utils/error.utils.js"; 
 
 const app = express();
 
@@ -28,5 +29,8 @@ app.use("/api/categories", categoryRoute);
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
+
+
+app.use(globalErrorHandler);
 
 export default app;

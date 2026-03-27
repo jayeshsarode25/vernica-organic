@@ -4,6 +4,7 @@ import cors from 'cors'
 import { applySecurityMiddleware } from './middleware/Security.middleware.js';
 
 
+
 const app = express();
 
 app.use(
@@ -25,8 +26,9 @@ app.get('/', (req ,res)=>{
 
 
 import cartRoutes from './routes/cart.route.js'
+import { globalErrorHandler } from './utils/error.utils.js';
 app.use('/api/cart', cartRoutes)
 
-
+app.use(globalErrorHandler);
 
 export default app;
