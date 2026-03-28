@@ -1,19 +1,47 @@
 import { config as dotenvconfig } from "dotenv";
-
-
 dotenvconfig();
 
+// ─────────────────────────────────────────────────────────────────
+// ENV VALIDATOR — Auth Service
+// Runs at startup — crashes immediately if any required var is missing
+// Better to crash early than fail silently in production
+// ─────────────────────────────────────────────────────────────────
 
-const _config = {
-    MONGO_URI: process.env.MONGO_URI,
-    JWT_SECRET: process.env.JWT_SECRET,
-    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET, 
-    REDIS_HOST:process.env.REDIS_HOST,
-    REDIS_PORT:process.env.REDIS_PORT,
-    REDIS_PASSWORD:process.env.REDIS_PASSWORD,
-    RABBITMQ_URI:process.env.RABBITMQ_URI
+const REQUIRED_VARS = [
+  "MONGO_URI",
+  "JWT_SECRET",
+  "TWILIO_ACCOUNT_SID",
+  "TWILIO_AUTH_TOKEN",
+  "TWILIO_WHATSAPP_FROM",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+  "REDIS_HOST",
+  "REDIS_PORT",
+  "REDIS_PASSWORD",
+  "RABBITMQ_URI",
+];
+
+const missing = REQUIRED_VARS.filter((key) => !process.env[key]);
+
+if (missing.length > 0) {
+  console.error("Missing required environment variables:");
+  missing.forEach((key) => console.error(`   - ${key}`));
+  console.error("\nAdd the missing variables to your .env file and restart.");
+  process.exit(1); // crash immediately — don't start the server
 }
 
+const _config = {
+  MONGO_URI:             process.env.MONGO_URI,
+  JWT_SECRET:            process.env.JWT_SECRET,
+  TWILIO_ACCOUNT_SID:    process.env.TWILIO_ACCOUNT_SID,
+  TWILIO_AUTH_TOKEN:     process.env.TWILIO_AUTH_TOKEN,
+  TWILIO_WHATSAPP_FROM:  process.env.TWILIO_WHATSAPP_FROM,
+  GOOGLE_CLIENT_ID:      process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET:  process.env.GOOGLE_CLIENT_SECRET,
+  REDIS_HOST:            process.env.REDIS_HOST,
+  REDIS_PORT:            process.env.REDIS_PORT,
+  REDIS_PASSWORD:        process.env.REDIS_PASSWORD,
+  RABBITMQ_URI:          process.env.RABBITMQ_URI,
+};
 
 export default _config;
