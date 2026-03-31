@@ -21,6 +21,7 @@ import CategoryManagement from "../pages/admin/CategoryManagement";
 import CategorySection from "../components/Categorysection";
 import CategoryProducts from "../pages/CategoryProducts";
 import ErrorBoundary from "../components/Errorboundary";
+import SearchResults from "../components/SearchResults";
 
 const MainRoutes = () => {
   return (
@@ -29,6 +30,7 @@ const MainRoutes = () => {
  
         {/* ── Static routes — no ErrorBoundary needed ── */}
         <Route path="/"          element={<Home />} />  {/* Home has its own ErrorBoundary per section */}
+        <Route path="/search" element={<SearchResults />} /> 
         <Route path="/login"     element={<Login />} />
         <Route path="/sign-up"   element={<SignUp />} />
         <Route path="/blog"      element={<BlogPage />} />

@@ -7,12 +7,12 @@ import Footer from "./Footer";
 import HeaderBar from "../components/HeaderBar";
 import CategorySection from "../components/Categorysection";
 import ErrorBoundary from "../components/Errorboundary"; 
-import SearchResults from "../components/SearchResults";
+
 
 const Home = () => {
   return (
     <div className="h-full">
-      <SearchResults />
+      
 
       {/* HeaderBar — no data fetch, low risk but wrap anyway */}
       <ErrorBoundary title="Header failed to load">
