@@ -21,7 +21,7 @@ export const addToCart = createAsyncThunk(
   async ({ productId, qty }, thunkApi) => {
     try {
       const res = await addItemToCartApi(productId, qty);
-      return { ...res.data, productId }; // ✅ pass productId back to remove from addingIds
+      return { ...res.data, productId };
     } catch (error) {
       return thunkApi.rejectWithValue({ ...error.response?.data, productId });
     }
@@ -67,14 +67,28 @@ export const clearCart = createAsyncThunk("cart/clear", async (_, thunkApi) => {
 const cartSlice = createSlice({
   name: "cart",
   initialState: {
-    items:      [],
-    totals:     null,
-    loading:    false, // global — for full cart load
-    error:      null,
-    addingIds:  [],    // ✅ per-product loading: ["productId1", "productId2"]
-    removingIds: [],   // ✅ per-product removing
+    items:        [],
+    totals:       null,
+    loading:      false,
+    error:        null,
+    addingIds:    [],
+    removingIds:  [],
+    // ── Coupon / Discount ──────────────────────────────────────────
+    discount:     0,      
+    couponCode:   "",     
   },
-  reducers: {},
+  reducers: {
+    // ── Apply a coupon discount ────────────────────────────────────
+    applyDiscount(state, action) {
+      state.discount   = action.payload.discount;
+      state.couponCode = action.payload.couponCode;
+    },
+    // ── Remove the coupon ──────────────────────────────────────────
+    clearDiscount(state) {
+      state.discount   = 0;
+      state.couponCode = "";
+    },
+  },
   extraReducers: (builder) => {
     builder
 
@@ -92,18 +106,15 @@ const cartSlice = createSlice({
 
       // ── addToCart ────────────────────────────────────────────────
       .addCase(addToCart.pending, (state, action) => {
-        // ✅ add productId to addingIds so only that button shows loading
         const id = action.meta.arg.productId;
         if (!state.addingIds.includes(id)) state.addingIds.push(id);
       })
       .addCase(addToCart.fulfilled, (state, action) => {
-        // ✅ remove from addingIds
         state.addingIds = state.addingIds.filter((id) => id !== action.payload.productId);
         state.items     = action.payload.cart?.items || [];
         state.totals    = action.payload.totals || null;
       })
       .addCase(addToCart.rejected, (state, action) => {
-        // ✅ remove from addingIds even on failure
         state.addingIds = state.addingIds.filter((id) => id !== action.payload?.productId);
         state.error     = action.payload?.message || "Failed to add to cart";
       })
@@ -136,14 +147,18 @@ const cartSlice = createSlice({
         state.removingIds = state.removingIds.filter((id) => id !== action.payload?.productId);
       })
 
-      // ── clearCart ────────────────────────────────────────────────
+      // ── clearCart ─────────────────────────────────────────────────
+      // ✅ Also reset discount when cart is cleared
       .addCase(clearCart.fulfilled, (state, action) => {
-        state.items      = action.payload.cart?.items || [];
-        state.totals     = action.payload.totals || null;
-        state.addingIds  = [];
+        state.items       = action.payload.cart?.items || [];
+        state.totals      = action.payload.totals || null;
+        state.addingIds   = [];
         state.removingIds = [];
+        state.discount    = 0;   // ✅ reset
+        state.couponCode  = "";  // ✅ reset
       });
   },
 });
 
+export const { applyDiscount, clearDiscount } = cartSlice.actions;
 export default cartSlice.reducer;

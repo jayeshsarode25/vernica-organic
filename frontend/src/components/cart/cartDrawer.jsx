@@ -4,6 +4,8 @@ import {
   clearCart,
   removeCartItem,
   updateCartItem,
+  applyDiscount,
+  clearDiscount,
 } from "../../redux/reducer/cartSlice";
 import { useNavigate } from "react-router-dom";
 
@@ -11,20 +13,24 @@ const CartDrawer = ({ open, setOpen }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { items = [], addingIds, removingIds } = useSelector((state) => state.cart);
+  // ✅ discount now comes from Redux, not local state
+  const { items = [], addingIds, removingIds, discount, couponCode } = useSelector((state) => state.cart);
 
-  const [coupon,   setCoupon]   = useState("");
-  const [discount, setDiscount] = useState(0);
+  const [coupon, setCoupon] = useState("");
 
   // ── Auto-open drawer when a product is added ───────────────────
   const prevAddingLen = useRef(0);
   useEffect(() => {
-    // addingIds going from >0 → 0 means an add just completed
     if (prevAddingLen.current > 0 && addingIds.length === 0) {
       setOpen(true);
     }
     prevAddingLen.current = addingIds.length;
   }, [addingIds, setOpen]);
+
+  // ── Sync coupon input with Redux couponCode ────────────────────
+  useEffect(() => {
+    if (couponCode) setCoupon(couponCode);
+  }, [couponCode]);
 
   // ── Totals ─────────────────────────────────────────────────────
   const subtotal = items.reduce((acc, item) => {
@@ -34,10 +40,19 @@ const CartDrawer = ({ open, setOpen }) => {
 
   const total = Math.max(subtotal - discount, 0);
 
+  // ✅ dispatch to Redux instead of local setState
   const applyCoupon = () => {
-    if (coupon === "SAVE10")       setDiscount(subtotal * 0.1);
-    else if (coupon === "SAVE100") setDiscount(100);
-    else                           alert("Invalid Coupon");
+    if (coupon === "SAVE10")
+      dispatch(applyDiscount({ discount: subtotal * 0.1, couponCode: coupon }));
+    else if (coupon === "SAVE100")
+      dispatch(applyDiscount({ discount: 100, couponCode: coupon }));
+    else
+      alert("Invalid Coupon");
+  };
+
+  const handleRemoveCoupon = () => {
+    dispatch(clearDiscount());
+    setCoupon("");
   };
 
   return (
@@ -91,7 +106,6 @@ const CartDrawer = ({ open, setOpen }) => {
                 item.productId._id?.toString() || item.productId?.toString();
               if (!productId) return null;
 
-              // ✅ per-item states from slice
               const isUpdating = addingIds.includes(productId);
               const isRemoving = removingIds.includes(productId);
               const isDisabled = isUpdating || isRemoving;
@@ -169,26 +183,36 @@ const CartDrawer = ({ open, setOpen }) => {
           {items.length > 0 && (
             <div className="p-5 border-t space-y-4">
               {/* Coupon */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Coupon code"
-                  value={coupon}
-                  onChange={(e) => setCoupon(e.target.value)}
-                  className="border flex-1 px-3 py-2 rounded-lg text-sm outline-none focus:border-emerald-400"
-                />
-                <button
-                  onClick={applyCoupon}
-                  className="bg-black text-white px-4 rounded-lg text-sm hover:bg-gray-800 transition-colors"
-                >
-                  Apply
-                </button>
-              </div>
-
-              {discount > 0 && (
-                <p className="text-green-600 text-sm font-medium">
-                  Discount Applied: −₹{discount.toFixed(2)}
-                </p>
+              {/* ✅ Hide input if coupon already applied */}
+              {!couponCode ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Coupon code"
+                    value={coupon}
+                    onChange={(e) => setCoupon(e.target.value.toUpperCase())}
+                    className="border flex-1 px-3 py-2 rounded-lg text-sm outline-none focus:border-emerald-400"
+                  />
+                  <button
+                    onClick={applyCoupon}
+                    className="bg-black text-white px-4 rounded-lg text-sm hover:bg-gray-800 transition-colors"
+                  >
+                    Apply
+                  </button>
+                </div>
+              ) : (
+                // ✅ Show applied coupon pill with remove button
+                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                  <p className="text-green-700 text-sm font-medium">
+                    🎉 {couponCode} applied
+                  </p>
+                  <button
+                    onClick={handleRemoveCoupon}
+                    className="text-green-600 text-xs hover:text-red-500 transition-colors ml-2"
+                  >
+                    Remove
+                  </button>
+                </div>
               )}
 
               {/* Subtotal */}

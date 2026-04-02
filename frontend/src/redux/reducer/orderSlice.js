@@ -22,7 +22,12 @@ export const createOrder = createAsyncThunk(
   "order/create",
   async (shippingAddress, thunkApi) => {
     try {
-      const res = await createOrderApi(shippingAddress);
+      const { cart } = thunkApi.getState();
+
+      const res = await createOrderApi({
+        shippingAddress,
+        discount: cart.discount,  
+      });
       return res.data;
     } catch (error) {
       return thunkApi.rejectWithValue(

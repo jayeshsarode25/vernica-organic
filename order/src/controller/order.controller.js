@@ -13,7 +13,7 @@ export const createOrder = catchAsync(async (req, res) => {
   }
 
   const userId = req.user.userId;
-  const token  = req.cookies?.token;
+  const token = req.cookies?.token;
 
   // fetch cart
   const cartResponse = await axios.get(`http://localhost:3003/api/cart/`, {
@@ -29,13 +29,13 @@ export const createOrder = catchAsync(async (req, res) => {
   // fetch all products in parallel
   const products = await Promise.all(
     cart.items.map(async (item) => {
-      const productId      = item.productId?._id || item.productId;
+      const productId = item.productId?._id || item.productId;
       const productResponse = await axios.get(
         `http://localhost:3002/api/products/${productId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       return productResponse.data.data;
-    })
+    }),
   );
 
   // build order items + calculate total
@@ -43,8 +43,8 @@ export const createOrder = catchAsync(async (req, res) => {
 
   const orderItems = cart.items.map((item) => {
     const productId = item.productId?._id || item.productId;
-    const product   = products.find(
-      (p) => p._id.toString() === productId.toString()
+    const product = products.find(
+      (p) => p._id.toString() === productId.toString(),
     );
 
     if (!product) {
@@ -56,23 +56,26 @@ export const createOrder = catchAsync(async (req, res) => {
     }
 
     const itemTotal = Number(product.price.amount) * Number(item.quantity);
-    totalAmount    += itemTotal;
+    totalAmount += itemTotal;
 
     return {
       productId,
       quantity: item.quantity,
       price: {
-        amount:   itemTotal,
+        amount: itemTotal,
         currency: product.price.currency || "INR",
       },
     };
   });
 
+  const discount = Number(req.body.discount) || 0;
+  const discountedTotal = Math.max(totalAmount - discount, 0);
+
   const order = await orderModel.create({
-    user:            userId,
-    items:           orderItems,
-    status:          "PENDING",
-    totalPrice:      { amount: totalAmount, currency: "INR" },
+    user: userId,
+    items: orderItems,
+    status: "PENDING",
+    totalPrice: { amount: discountedTotal, currency: "INR" },
     shippingAddress: req.body.shippingAddress,
   });
 
@@ -83,10 +86,10 @@ export const createOrder = catchAsync(async (req, res) => {
 // GET MY ORDERS
 // ─────────────────────────────────────────────────────────────────
 export const getMyOrder = catchAsync(async (req, res) => {
-  const userId   = req.user.userId;
-  const page     = parseInt(req.query.page)  || 1;
-  const limit    = parseInt(req.query.limit) || 10;
-  const skip     = (page - 1) * limit;
+  const userId = req.user.userId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
 
   const [order, totalOrder] = await Promise.all([
     orderModel.find({ user: userId }).skip(skip).limit(limit).exec(),
@@ -103,7 +106,7 @@ export const getMyOrder = catchAsync(async (req, res) => {
 // GET ORDER BY ID
 // ─────────────────────────────────────────────────────────────────
 export const getOrderById = catchAsync(async (req, res) => {
-  const userId  = req.user.userId;
+  const userId = req.user.userId;
   const orderId = req.params.id;
 
   const order = await orderModel.findById(orderId);
@@ -123,7 +126,7 @@ export const getOrderById = catchAsync(async (req, res) => {
 // CANCEL ORDER
 // ─────────────────────────────────────────────────────────────────
 export const cancelOrder = catchAsync(async (req, res) => {
-  const userId  = req.user.userId;
+  const userId = req.user.userId;
   const orderId = req.params.id;
 
   const order = await orderModel.findById(orderId);
@@ -150,7 +153,7 @@ export const cancelOrder = catchAsync(async (req, res) => {
 // UPDATE ORDER ADDRESS
 // ─────────────────────────────────────────────────────────────────
 export const updateOrderAddress = catchAsync(async (req, res) => {
-  const userId  = req.user.userId;
+  const userId = req.user.userId;
   const orderId = req.params.id;
 
   const order = await orderModel.findById(orderId);
@@ -201,7 +204,7 @@ export const getOrderDashboard = catchAsync(async (req, res) => {
 
   res.json({
     totalOrders,
-    totalRevenue:  revenueData[0]?.total || 0,
+    totalRevenue: revenueData[0]?.total || 0,
     ordersByStatus,
     topProduct,
   });
@@ -212,9 +215,15 @@ export const getOrderDashboard = catchAsync(async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 export const updateOrderStatus = catchAsync(async (req, res) => {
   const { status } = req.body;
-  const orderId    = req.params.id;
+  const orderId = req.params.id;
 
-  const allowedStatus = ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+  const allowedStatus = [
+    "PENDING",
+    "PROCESSING",
+    "SHIPPED",
+    "DELIVERED",
+    "CANCELLED",
+  ];
 
   if (!allowedStatus.includes(status)) {
     throw new AppError("Invalid status value", 400);
@@ -223,7 +232,7 @@ export const updateOrderStatus = catchAsync(async (req, res) => {
   const order = await orderModel.findByIdAndUpdate(
     orderId,
     { status },
-    { new: true }
+    { new: true },
   );
 
   if (!order) {
@@ -238,16 +247,16 @@ export const updateOrderStatus = catchAsync(async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 export const getAllOrders = catchAsync(async (req, res) => {
   const {
-    page      = 1,
-    limit     = 10,
+    page = 1,
+    limit = 10,
     status,
     search,
     startDate,
     endDate,
-    sort      = "desc",
+    sort = "desc",
   } = req.query;
 
-  const pageNum  = Number(page);
+  const pageNum = Number(page);
   const limitNum = Number(limit);
 
   const filter = {};
@@ -257,14 +266,14 @@ export const getAllOrders = catchAsync(async (req, res) => {
   if (startDate || endDate) {
     filter.createdAt = {};
     if (startDate) filter.createdAt.$gte = new Date(startDate);
-    if (endDate)   filter.createdAt.$lte = new Date(endDate);
+    if (endDate) filter.createdAt.$lte = new Date(endDate);
   }
 
   if (search) {
     const users = await userModel
       .find({
         $or: [
-          { name:  { $regex: search, $options: "i" } },
+          { name: { $regex: search, $options: "i" } },
           { email: { $regex: search, $options: "i" } },
         ],
       })
@@ -290,10 +299,10 @@ export const getAllOrders = catchAsync(async (req, res) => {
   ]);
 
   res.json({
-    success:    true,
-    page:       pageNum,
+    success: true,
+    page: pageNum,
     totalPages: Math.ceil(totalOrders / limitNum),
     totalOrders,
-    data:       orders,
+    data: orders,
   });
 });

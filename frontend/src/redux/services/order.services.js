@@ -9,8 +9,8 @@ const orderApi = axios.create({
 
 
 
-export const createOrderApi = (shippingAddress) =>
-  orderApi.post("/", { shippingAddress });
+export const createOrderApi = (data) =>
+  orderApi.post("/", data);
  
 export const getMyOrdersApi = () => orderApi.get("/me");
  

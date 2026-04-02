@@ -33,38 +33,28 @@ export default function PaymentPage() {
   const orderId =
     currentOrder?._id ?? sessionStorage.getItem("current_order_id");
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
     };
   }, []);
 
-  // Reset payment slice on unmount
   useEffect(() => {
     return () => {
       dispatch(resetPayment());
     };
   }, [dispatch]);
 
-  // Initial validation and payment opening
   useEffect(() => {
-    // Guard: user must be logged in
     if (!user) {
       navigate("/login", { replace: true });
       return;
     }
-
-    // Guard: must have an order
     if (!orderId) {
       navigate("/checkout", { replace: true });
       return;
     }
-
-    // Prevent multiple opens
-    if (hasOpenedRef.current) {
-      return;
-    }
+    if (hasOpenedRef.current) return;
 
     hasOpenedRef.current = true;
     openRazorpay();
@@ -72,13 +62,9 @@ export default function PaymentPage() {
 
   const handleDismiss = () => {
     if (!isMountedRef.current) return;
-
-    // Clear all state BEFORE navigation
     dispatch(resetPayment());
     sessionStorage.removeItem("current_order_id");
     dispatch(clearCurrentOrder());
-
-    // Navigate AFTER clearing state
     navigate("/checkout", { replace: true });
   };
 
@@ -96,25 +82,18 @@ export default function PaymentPage() {
     if (!isMountedRef.current) return;
 
     if (verifyPayment.fulfilled.match(verifyResult)) {
-      // Clear everything
       dispatch(clearCart());
       dispatch(clearCurrentOrder());
       sessionStorage.removeItem("current_order_id");
-
-      // Navigate to success
       navigate(`/order/success/${orderId}`, { replace: true });
     }
   };
 
   const handlePaymentFailed = (response) => {
     if (!isMountedRef.current) return;
-
-    // Clear state on failure
     dispatch(resetPayment());
     dispatch(clearCurrentOrder());
     sessionStorage.removeItem("current_order_id");
-
-    // Navigate to error page
     navigate("/order/failed", {
       state: { reason: response.error.description },
       replace: true,
@@ -124,7 +103,6 @@ export default function PaymentPage() {
   const openRazorpay = async () => {
     if (!isMountedRef.current) return;
 
-    // Load script
     const loaded = await loadRazorpayScript();
     if (!loaded) {
       if (!isMountedRef.current) return;
@@ -136,22 +114,17 @@ export default function PaymentPage() {
 
     if (!isMountedRef.current) return;
 
-    // Create payment
     const result = await dispatch(createPayment(orderId));
 
     if (!isMountedRef.current) return;
-
-    if (createPayment.rejected.match(result)) {
-      return;
-    }
-
+    if (createPayment.rejected.match(result)) return;
     if (!isMountedRef.current) return;
 
     const { razorpayOrderId, price } = result.payload.newPayment;
 
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: price.amount,
+      amount: price.amount,       // ✅ this now comes from order.totalPrice (discounted)
       currency: price.currency,
       order_id: razorpayOrderId,
       name: "Your Store",
@@ -173,25 +146,46 @@ export default function PaymentPage() {
     };
 
     const rzp = new window.Razorpay(options);
-
     rzp.on("payment.failed", (response) => {
       handlePaymentFailed(response);
     });
-
     rzp.open();
   };
 
   const isLoading = status === "initiating" || status === "verifying";
 
+  // ✅ Show both original and discounted price if discount was applied
+  const originalAmount = currentOrder?.items?.reduce(
+    (sum, item) => sum + (item.price?.amount || 0), 0
+  );
+  const finalAmount = currentOrder?.totalPrice?.amount;
+  const hasDiscount = originalAmount && finalAmount && originalAmount > finalAmount;
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="flex flex-col items-center gap-5 text-center max-w-sm w-full">
-        {/* Price Summary */}
+
+        {/* ✅ Price Summary — shows discount breakdown if applicable */}
         {currentOrder?.totalPrice && (
           <div className="w-full bg-white border border-gray-100 rounded-xl px-6 py-4 shadow-sm">
-            <p className="text-sm text-gray-400 mb-1">Price Summary</p>
+            <p className="text-sm text-gray-400 mb-2">Price Summary</p>
+
+            {hasDiscount && (
+              <div className="flex justify-between text-sm text-gray-400 mb-1">
+                <span>Original</span>
+                <span className="line-through">₹{originalAmount?.toLocaleString("en-IN")}</span>
+              </div>
+            )}
+
+            {hasDiscount && (
+              <div className="flex justify-between text-sm text-green-600 mb-2">
+                <span>Discount</span>
+                <span>−₹{(originalAmount - finalAmount).toLocaleString("en-IN")}</span>
+              </div>
+            )}
+
             <p className="text-2xl font-bold text-gray-900">
-              ₹{currentOrder.totalPrice.amount?.toLocaleString("en-IN")}
+              ₹{finalAmount?.toLocaleString("en-IN")}
             </p>
           </div>
         )}
@@ -217,9 +211,7 @@ export default function PaymentPage() {
         {error && (
           <>
             <span className="text-4xl">⚠️</span>
-            <p className="text-base font-semibold text-gray-800">
-              Payment failed
-            </p>
+            <p className="text-base font-semibold text-gray-800">Payment failed</p>
             <p className="text-sm text-red-500">{error}</p>
             <div className="flex gap-3">
               <button
@@ -235,9 +227,7 @@ export default function PaymentPage() {
                 Retry
               </button>
               <button
-                onClick={() => {
-                  handleDismiss();
-                }}
+                onClick={() => { handleDismiss(); }}
                 className="px-6 py-2.5 border border-gray-200 text-gray-600 text-sm
                            font-medium rounded-lg hover:bg-gray-50 transition-colors"
               >
