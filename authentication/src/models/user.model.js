@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
       required: function () {
-        return this.authProvider !== "google"; // ✅ phone only required for non-google
+        return this.authProvider !== "google"; // phone only required for non-google
       },
     },
 

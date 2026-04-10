@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import categoryModel from "../model/category.model.js";
-import { AppError, catchAsync } from "../utils/error.utils.js"; // ✅
+import { AppError, catchAsync } from "../utils/error.utils.js"; 
 
 // ── shared slug generator ──────────────────────────────────────────
 const generateSlug = (name) =>
