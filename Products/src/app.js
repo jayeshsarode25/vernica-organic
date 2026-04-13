@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import productRoutes from "./routes/product.route.js";
 import categoryRoute from "./routes/Category.routes.js";
+import blogRoutes from './routes/blog.routes.js';
 import { applySecurityMiddleware } from "./middleware/Security.middleware .js";
 import { globalErrorHandler } from "./utils/error.utils.js"; 
 
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoute);
+app.use('/api/blogs', blogRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
