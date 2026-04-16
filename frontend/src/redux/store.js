@@ -8,6 +8,7 @@ import orderReducer from '../redux/reducer/orderSlice'
 import paymentReducer from '../redux/reducer/paymentSlice'
 import profileReducer from '../redux/reducer/Profileslice'
 import categoryReducer from '../redux/reducer/Categoryslice'
+import blogReducer from '../redux/reducer/Blogslice'
 
 export const store = configureStore({
   reducer: {
@@ -20,5 +21,6 @@ export const store = configureStore({
     payment : paymentReducer,
     profile : profileReducer, 
     categories : categoryReducer,
+    blogs: blogReducer,
   },
 })
