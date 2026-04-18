@@ -5,6 +5,7 @@ import Login from "../pages/Login";
 import SignUp from "../pages/SignUp";
 import PageNotFound from "../pages/PageNotFound";
 import BlogPage from "../pages/BlogPage";
+import BlogDetail from "../pages/BlogDetail"; // ← ADD THIS
 import ContactUs from "../pages/Contactus";
 import AboutUs from "../pages/AboutUs";
 import ProdectDetail from "../components/products/ProdectDetail";
@@ -18,6 +19,7 @@ import CheckoutPage from "../pages/order/CheckoutPage";
 import PaymentPage from "../pages/order/PaymentPage";
 import Orders from "../pages/admin/Orders";
 import CategoryManagement from "../pages/admin/CategoryManagement";
+import BlogManagement from "../pages/admin/BlogManagement"; // ← ADD THIS
 import CategorySection from "../components/Categorysection";
 import CategoryProducts from "../pages/CategoryProducts";
 import ErrorBoundary from "../components/Errorboundary";
@@ -29,11 +31,12 @@ const MainRoutes = () => {
       <Routes>
  
         {/* ── Static routes — no ErrorBoundary needed ── */}
-        <Route path="/"          element={<Home />} />  {/* Home has its own ErrorBoundary per section */}
+        <Route path="/"          element={<Home />} />
         <Route path="/search" element={<SearchResults />} /> 
         <Route path="/login"     element={<Login />} />
         <Route path="/sign-up"   element={<SignUp />} />
-        <Route path="/blog"      element={<BlogPage />} />
+        <Route path="/blogs"     element={<BlogPage />} /> {/* ← CHANGED from /blog to /blogs */}
+        <Route path="/blog/:slug" element={<BlogDetail />} /> {/* ← ADD THIS - Single blog detail */}
         <Route path="/about-us"  element={<AboutUs />} />
         <Route path="/contact-us" element={<ContactUs />} />
  
@@ -102,6 +105,13 @@ const MainRoutes = () => {
               <Dashboard />
             </ErrorBoundary>
           } />
+
+          {/* ← ADD THIS - Blog Management Route */}
+          <Route path="blogs" element={
+            <ErrorBoundary message="Blog management failed to load.">
+              <BlogManagement />
+            </ErrorBoundary>
+          } />
  
           <Route path="products" element={
             <ErrorBoundary message="Products management failed to load.">
@@ -121,7 +131,7 @@ const MainRoutes = () => {
             </ErrorBoundary>
           } />
  
-          <Route path="/admin/categories" element={
+          <Route path="categories" element={
             <ErrorBoundary message="Category management failed to load.">
               <CategoryManagement />
             </ErrorBoundary>

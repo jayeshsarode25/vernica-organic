@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { getAllBlogs, getBlogCategories, getBlogTags } from '../redux/slices/blogSlice'
+import { getAllBlogs, getBlogCategories, getBlogTags } from '../redux/reducer/Blogslice'
 import { Link } from 'react-router-dom'
 import { Search, Calendar, User, Eye } from 'lucide-react'
 

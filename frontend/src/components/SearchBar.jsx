@@ -26,7 +26,7 @@ const SearchBar = ({ close }) => {
     const q = text.toLowerCase();
     const filtered = products.filter(
       (p) =>
-        p.title?.toLowerCase().includes(q) ||        // ✅ was p.name (wrong)
+        p.title?.toLowerCase().includes(q) ||        
         p.category?.toLowerCase().includes(q) ||
         p.description?.toLowerCase().includes(q)
     );

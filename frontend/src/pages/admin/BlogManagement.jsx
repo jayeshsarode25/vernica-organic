@@ -8,10 +8,10 @@ import {
   getBlogCategories,
   clearSuccess,
   clearError,
-} from '../redux/slices/blogSlice'
+} from '../../redux/reducer/Blogslice'
 import { Edit2, Trash2, Plus, Search, Eye, CheckCircle } from 'lucide-react'
-import BlogForm from '../components/admin/BlogForm'
-import BlogCard from '../components/admin/BlogCard'
+import BlogForm from '../../components/admin/BlogForm'
+import BlogCard from '../../components/admin/BlogCard'
 
 const BlogManagement = () => {
   const dispatch = useDispatch()

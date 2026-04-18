@@ -19,6 +19,19 @@ const links = [
     ),
   },
   {
+    to: "/admin/blogs",
+    label: "Blogs",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M2 2h12v2H2V2z" />
+        <path d="M2 5h12v1H2V5z" />
+        <path d="M2 7h8v1H2V7z" />
+        <path d="M2 9h12v1H2V9z" />
+        <path d="M2 11h10v1H2v-1z" />
+      </svg>
+    ),
+  },
+  {
     to: "/admin/orders",
     label: "Orders",
     icon: (
@@ -180,4 +193,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;

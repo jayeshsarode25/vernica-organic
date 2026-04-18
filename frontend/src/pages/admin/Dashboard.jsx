@@ -4,6 +4,7 @@ import { productCount } from "../../redux/reducer/productSlice";
 import { fetchUserCount, fetchUsers } from "../../redux/reducer/userSlice";
 import { getDashboard } from "../../redux/reducer/orderSlice";
 import { fetchCategories } from "../../redux/reducer/Categoryslice"; 
+import { getAllBlogsAdmin } from "../../redux/reducer/Blogslice"; // ← ADD THIS
 import { Link } from "react-router-dom";
 
 const StatCard = ({ label, value, loading, iconBg, icon }) => (
@@ -50,10 +51,16 @@ const Dashboard = () => {
     (s) => s.categories
   );
 
+  // ← ADD THIS - Blog state
+  const { blogs, loading: blogLoading } = useSelector(
+    (s) => s.blogs
+  );
+
   const blockedCount = userItems.filter((u) => u.isBlocked).length;
   const totalOrders = orderDashboard?.totalOrders || 0;
   const totalRevenue = orderDashboard?.totalRevenue || 0;
   const categoryCount = categories?.length || 0; // ← ADD THIS
+  const blogCount = blogs?.length || 0; // ← ADD THIS
 
   useEffect(() => {
     dispatch(productCount());
@@ -61,6 +68,7 @@ const Dashboard = () => {
     dispatch(fetchUsers());
     dispatch(getDashboard()); // Fetch order dashboard data
     dispatch(fetchCategories()); // ← ADD THIS - Fetch categories
+    dispatch(getAllBlogsAdmin({ page: 1, limit: 10 })); // ← ADD THIS - Fetch blogs
   }, [dispatch]);
 
   return (
@@ -68,8 +76,8 @@ const Dashboard = () => {
       <h1 className="text-xl font-semibold text-gray-900 mb-1">Dashboard</h1>
       <p className="text-sm text-gray-500 mb-8">Welcome back, Admin</p>
 
-      {/* ← UPDATED: Changed from 4 columns to 5 columns for categories */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+      {/* ← UPDATED: Changed from 5 columns to 6 columns for blogs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5">
         <StatCard
           label="Total Users"
           value={userCount}
@@ -115,6 +123,22 @@ const Dashboard = () => {
             </svg>
           }
         />
+        {/* ← ADD THIS - Blog stat card */}
+        <StatCard
+          label="Total Blogs"
+          value={blogCount}
+          loading={blogLoading}
+          iconBg="bg-pink-50"
+          icon={
+            <svg width="22" height="22" viewBox="0 0 16 16" fill="#EC4899">
+              <path d="M2 2h12v2H2V2z" />
+              <path d="M2 5h12v1H2V5z" />
+              <path d="M2 7h8v1H2V7z" />
+              <path d="M2 9h12v1H2V9z" />
+              <path d="M2 11h10v1H2v-1z" />
+            </svg>
+          }
+        />
         <StatCard
           label="Total Orders"
           value={totalOrders}
@@ -146,8 +170,8 @@ const Dashboard = () => {
       {/* Quick actions */}
       <div className="mt-8">
         <p className="text-sm font-medium text-gray-700 mb-3">Quick actions</p>
-        {/* ← UPDATED: Changed from 4 columns to 5 columns for categories */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        {/* ← UPDATED: Changed from 5 columns to 6 columns for blogs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
           <Link
             to="/admin/dashboard"
             className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-5 py-4 hover:border-blue-300 hover:bg-blue-50 transition-colors group"
@@ -168,7 +192,28 @@ const Dashboard = () => {
             </div>
           </Link>
 
-          {/* ← ADD THIS - Categories Quick Action */}
+          {/* ← ADD THIS - Blogs Quick Action */}
+          <Link
+            to="/admin/blogs"
+            className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-5 py-4 hover:border-pink-300 hover:bg-pink-50 transition-colors group"
+          >
+            <div className="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="#EC4899">
+                <path d="M2 2h12v2H2V2z" />
+                <path d="M2 5h12v1H2V5z" />
+                <path d="M2 7h8v1H2V7z" />
+                <path d="M2 9h12v1H2V9z" />
+                <path d="M2 11h10v1H2v-1z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-800 group-hover:text-pink-700">
+                Manage Blogs
+              </p>
+              <p className="text-xs text-gray-400">Create and manage blogs</p>
+            </div>
+          </Link>
+
           <Link
             to="/admin/categories"
             className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-5 py-4 hover:border-orange-300 hover:bg-orange-50 transition-colors group"
