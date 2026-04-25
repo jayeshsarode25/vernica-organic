@@ -1,6 +1,4 @@
 // src/redux/slices/blogSlice.js
-// Blog state management with Redux Toolkit
-
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
   fetchAllBlogs,
@@ -23,10 +21,10 @@ export const getAllBlogs = createAsyncThunk(
   'blogs/getAllBlogs',
   async ({ page = 1, limit = 10, category = '', tag = '', search = '' }, { rejectWithValue }) => {
     try {
-      const response = await fetchAllBlogs(page, limit, category, tag, search);
-      return response;
+      const { data } = await fetchAllBlogs(page, limit, category, tag, search);
+      return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -35,10 +33,10 @@ export const getBlogBySlug = createAsyncThunk(
   'blogs/getBlogBySlug',
   async (slug, { rejectWithValue }) => {
     try {
-      const response = await fetchBlogBySlug(slug);
-      return response;
+      const { data } = await fetchBlogBySlug(slug);
+      return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -47,10 +45,10 @@ export const getBlogCategories = createAsyncThunk(
   'blogs/getBlogCategories',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetchBlogCategories();
-      return response;
+      const { data } = await fetchBlogCategories();
+      return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -59,10 +57,10 @@ export const getBlogTags = createAsyncThunk(
   'blogs/getBlogTags',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetchBlogTags();
-      return response;
+      const { data } = await fetchBlogTags();
+      return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -71,23 +69,22 @@ export const getRelatedBlogs = createAsyncThunk(
   'blogs/getRelatedBlogs',
   async (blogId, { rejectWithValue }) => {
     try {
-      const response = await fetchRelatedBlogs(blogId);
-      return response;
+      const { data } = await fetchRelatedBlogs(blogId);
+      return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
 
-// Admin thunks
 export const getAllBlogsAdmin = createAsyncThunk(
   'blogs/getAllBlogsAdmin',
   async ({ page = 1, limit = 10 }, { rejectWithValue }) => {
     try {
-      const response = await fetchAllBlogsAdmin(page, limit);
-      return response;
+      const { data } = await fetchAllBlogsAdmin(page, limit);
+      return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -96,10 +93,10 @@ export const getBlogByIdAdmin = createAsyncThunk(
   'blogs/getBlogByIdAdmin',
   async (blogId, { rejectWithValue }) => {
     try {
-      const response = await fetchBlogById(blogId);
-      return response;
+      const { data } = await fetchBlogById(blogId);
+      return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -108,10 +105,10 @@ export const createBlog = createAsyncThunk(
   'blogs/createBlog',
   async (blogData, { rejectWithValue }) => {
     try {
-      const response = await createBlogService(blogData);
-      return response;
+      const { data } = await createBlogService(blogData);
+      return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -120,10 +117,10 @@ export const updateBlog = createAsyncThunk(
   'blogs/updateBlog',
   async ({ blogId, blogData }, { rejectWithValue }) => {
     try {
-      const response = await updateBlogService(blogId, blogData);
-      return response;
+      const { data } = await updateBlogService(blogId, blogData);
+      return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -135,7 +132,7 @@ export const deleteBlog = createAsyncThunk(
       await deleteBlogService(blogId);
       return blogId;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -150,12 +147,12 @@ const initialState = {
   relatedBlogs: [],
   categories: [],
   tags: [],
-  
+
   loading: false,
   error: null,
   success: false,
   successMessage: '',
-  
+
   pagination: {
     total: 0,
     pages: 0,
@@ -316,12 +313,8 @@ const blogSlice = createSlice({
       })
       .addCase(updateBlog.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.blogs.findIndex(
-          (blog) => blog._id === action.payload.data._id
-        );
-        if (index !== -1) {
-          state.blogs[index] = action.payload.data;
-        }
+        const index = state.blogs.findIndex((blog) => blog._id === action.payload.data._id);
+        if (index !== -1) state.blogs[index] = action.payload.data;
         state.selectedBlog = action.payload.data;
         state.success = true;
         state.successMessage = 'Blog updated successfully';
@@ -350,11 +343,6 @@ const blogSlice = createSlice({
   },
 });
 
-export const {
-  clearError,
-  clearSuccess,
-  setSelectedBlog,
-  clearSelectedBlog,
-} = blogSlice.actions;
+export const { clearError, clearSuccess, setSelectedBlog, clearSelectedBlog } = blogSlice.actions;
 
 export default blogSlice.reducer;

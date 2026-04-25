@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { getBlogBySlug, getRelatedBlogs } from '../redux/slices/blogSlice'
+import { getBlogBySlug, getRelatedBlogs } from '../redux/reducer/Blogslice'
 import { Calendar, User, Eye, Share2, ArrowLeft } from 'lucide-react'
 
 const BlogDetail = () => {
@@ -53,16 +53,13 @@ const BlogDetail = () => {
 
   const handleShare = () => {
     const url = window.location.href
-    const text = `Check out this blog: ${selectedBlog.title}`
-
     if (navigator.share) {
       navigator.share({
         title: selectedBlog.title,
         text: selectedBlog.description,
-        url: url,
+        url,
       })
     } else {
-      // Fallback: copy to clipboard
       navigator.clipboard.writeText(url)
       alert('Blog URL copied to clipboard!')
     }
@@ -70,6 +67,7 @@ const BlogDetail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+
       {/* Back Button */}
       <div className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -96,13 +94,14 @@ const BlogDetail = () => {
 
       {/* Article Content */}
       <article className="max-w-4xl mx-auto px-4 py-12">
+
         {/* Category Badge */}
         <span className="inline-block px-4 py-1 bg-green-100 text-green-700 font-semibold rounded-full mb-4">
           {selectedBlog.category}
         </span>
 
         {/* Title */}
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 break-words">
           {selectedBlog.title}
         </h1>
 
@@ -114,11 +113,13 @@ const BlogDetail = () => {
           </div>
           <div className="flex items-center gap-2">
             <Calendar size={18} />
-            <span>{new Date(selectedBlog.createdAt).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}</span>
+            <span>
+              {new Date(selectedBlog.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Eye size={18} />
@@ -139,12 +140,15 @@ const BlogDetail = () => {
         </button>
 
         {/* Blog Content */}
-        <div className="prose prose-lg max-w-none mb-12">
-          <div
-            className="text-gray-800 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: selectedBlog.content }}
-          />
-        </div>
+        <div
+          className="text-gray-800 leading-relaxed mb-12"
+          style={{
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word',
+            minWidth: 0,
+          }}
+          dangerouslySetInnerHTML={{ __html: selectedBlog.content }}
+        />
 
         {/* Tags */}
         {selectedBlog.tags && selectedBlog.tags.length > 0 && (
@@ -192,7 +196,7 @@ const BlogDetail = () => {
                     <span className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded">
                       {blog.category}
                     </span>
-                    <h3 className="text-lg font-bold text-gray-900 mt-2 group-hover:text-green-600 line-clamp-2">
+                    <h3 className="text-lg font-bold text-gray-900 mt-2 group-hover:text-green-600 line-clamp-2 break-words">
                       {blog.title}
                     </h3>
                     <p className="text-gray-600 text-sm mt-2 line-clamp-2">
@@ -209,6 +213,79 @@ const BlogDetail = () => {
           </div>
         </section>
       )}
+
+      {/* Global blog content styles */}
+      <style>{`
+        [data-blog-content] * {
+          max-width: 100%;
+        }
+        [data-blog-content] img {
+          height: auto;
+          border-radius: 8px;
+          margin: 1rem 0;
+        }
+        [data-blog-content] p {
+          margin-bottom: 1rem;
+          line-height: 1.8;
+        }
+        [data-blog-content] h1,
+        [data-blog-content] h2,
+        [data-blog-content] h3,
+        [data-blog-content] h4 {
+          font-weight: 700;
+          margin: 1.5rem 0 0.75rem;
+          color: #111827;
+        }
+        [data-blog-content] h1 { font-size: 2rem; }
+        [data-blog-content] h2 { font-size: 1.5rem; }
+        [data-blog-content] h3 { font-size: 1.25rem; }
+        [data-blog-content] a {
+          color: #16a34a;
+          text-decoration: underline;
+          word-break: break-all;
+        }
+        [data-blog-content] ul,
+        [data-blog-content] ol {
+          padding-left: 1.5rem;
+          margin-bottom: 1rem;
+        }
+        [data-blog-content] li {
+          margin-bottom: 0.4rem;
+          line-height: 1.7;
+        }
+        [data-blog-content] blockquote {
+          border-left: 4px solid #16a34a;
+          padding-left: 1rem;
+          color: #6b7280;
+          font-style: italic;
+          margin: 1.5rem 0;
+        }
+        [data-blog-content] table {
+          width: 100%;
+          overflow-x: auto;
+          display: block;
+          border-collapse: collapse;
+        }
+        [data-blog-content] th,
+        [data-blog-content] td {
+          border: 1px solid #e5e7eb;
+          padding: 0.5rem 1rem;
+        }
+        [data-blog-content] pre {
+          overflow-x: auto;
+          background: #f3f4f6;
+          padding: 1rem;
+          border-radius: 8px;
+          margin-bottom: 1rem;
+        }
+        [data-blog-content] code {
+          background: #f3f4f6;
+          padding: 0.1rem 0.4rem;
+          border-radius: 4px;
+          font-size: 0.9em;
+          word-break: break-all;
+        }
+      `}</style>
     </div>
   )
 }
