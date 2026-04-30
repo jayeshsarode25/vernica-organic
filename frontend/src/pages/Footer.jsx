@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Logo from "../components/Navbar/Logo";
-import TextPressure from "../components/TextPressure";
+import TextType from "../components/TextType";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -36,6 +36,8 @@ const serviceLinks = [
   "Consulting",
 ];
 const bottomLinks = ["Privacy Policy", "Terms & Conditions", "FAQ"];
+
+
 
 // ─── Letter-by-letter brand name ──────────────────────────────────────────────
 
@@ -1513,21 +1515,23 @@ export default function Footer() {
 
           {/* Letter-by-letter brand name */}
           {/* <BigBrandName/> */}
-          <div style={{ position: "relative", height: "300px" }}>
-            <TextPressure
-              text="Vernica"
-              flex
-              alpha={false}
-              stroke={false}
-              width
-              weight
-              italic
-              textColor="#111"
-              strokeColor="#5227FF"
-              minFontSize={36}
-            />
-          </div>
-
+          <TextType
+            text={["Varnika Organic", "Naturally Build", "Eco-Friendly"]}
+            typingSpeed={85}
+            fontsize={90}
+            fontWeight={500}
+            pauseDuration={1500}
+            showCursor
+            cursorCharacter="_"
+            texts={[
+              "",
+            ]}
+            deletingSpeed={55}
+            variableSpeedEnabled={false}
+            variableSpeedMin={60}
+            variableSpeedMax={120}
+            cursorBlinkDuration={0.5}
+          />
           {/* Grass + flowers with mouse interaction */}
           <GrassScene />
         </div>
