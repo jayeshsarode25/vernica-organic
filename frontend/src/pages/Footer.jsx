@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Logo from "../components/Navbar/Logo";
-import TextType from "../components/TextType";
+
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -37,9 +37,8 @@ const serviceLinks = [
 ];
 const bottomLinks = ["Privacy Policy", "Terms & Conditions", "FAQ"];
 
-
-
 // ─── Letter-by-letter brand name ──────────────────────────────────────────────
+
 
 // function BigBrandName() {
 //   const sectionRef = useRef(null);
@@ -779,7 +778,7 @@ function SidePlant({ side = "left" }) {
     return (
       <svg
         ref={ref}
-        className="organic-blob"
+        className="organic-blob side-plant"
         style={{
           top: 0,
           left: 0,
@@ -945,7 +944,7 @@ function SidePlant({ side = "left" }) {
   return (
     <svg
       ref={ref}
-      className="organic-blob"
+      className="organic-blob side-plant"
       style={{
         top: 0,
         right: 0,
@@ -1222,6 +1221,9 @@ export default function Footer() {
           pointer-events: none;
           z-index: 0;
         }
+        .side-plant {
+          z-index: 3;
+        }
         .footer-inner {
           position: relative;
           z-index: 2;
@@ -1309,6 +1311,8 @@ export default function Footer() {
           border-radius: 12px; overflow: hidden;
           margin-bottom: 0; border: 0.5px solid #c4dba8;
           position: relative;
+          width: 100vw;
+          margin-left: calc(50% - 50vw);
         }
         .footer-video-wrap video {
           width: 100%; height: clamp(160px, 22vw, 320px);
@@ -1515,23 +1519,7 @@ export default function Footer() {
 
           {/* Letter-by-letter brand name */}
           {/* <BigBrandName/> */}
-          <TextType
-            text={["Varnika Organic", "Naturally Build", "Eco-Friendly"]}
-            typingSpeed={85}
-            fontsize={90}
-            fontWeight={500}
-            pauseDuration={1500}
-            showCursor
-            cursorCharacter="_"
-            texts={[
-              "",
-            ]}
-            deletingSpeed={55}
-            variableSpeedEnabled={false}
-            variableSpeedMin={60}
-            variableSpeedMax={120}
-            cursorBlinkDuration={0.5}
-          />
+          
           {/* Grass + flowers with mouse interaction */}
           <GrassScene />
         </div>
