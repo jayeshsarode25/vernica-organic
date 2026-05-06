@@ -13,7 +13,7 @@ const CategoryCard = ({
       <Link to={`/category/${category.slug}`}>
         <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 cursor-pointer group">
           <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg p-8 mb-4 group-hover:from-blue-200 transition-colors">
-            <h3 className="text-2xl font-bold text-blue-900">
+            <h3 className="text-2xl font-bold text-black">
               {category.name.charAt(0).toUpperCase()}
             </h3>
           </div>

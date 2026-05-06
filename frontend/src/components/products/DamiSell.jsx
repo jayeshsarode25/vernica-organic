@@ -20,7 +20,7 @@ export default function SellBanner() {
   const pad = (n) => String(n).padStart(2, "0");
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <link
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500&display=swap"
         rel="stylesheet"
@@ -28,7 +28,7 @@ export default function SellBanner() {
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
 
       <div
-        className="w-full max-w-5xl bg-white rounded-2xl overflow-hidden shadow-sm grid grid-cols-1 lg:grid-cols-2"
+        className="w-full max-w-5xl bg-gray-100 rounded-2xl overflow-hidden shadow-sm grid grid-cols-1 lg:grid-cols-2"
         style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
       >
 

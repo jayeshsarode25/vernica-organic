@@ -16,7 +16,7 @@ const CategoryDropdown = () => {
  
   return (
     <div className="relative group">
-      <button className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition">
+      <button className="flex items-center gap-2 text-gray-700 hover:text-green-700 font-medium transition">
         Categories
         <ChevronDown size={18} className="group-hover:rotate-180 transition-transform" />
       </button>
@@ -36,7 +36,7 @@ const CategoryDropdown = () => {
             <Link
               key={category._id}
               to={`/category/${category.slug}`}
-              className={`block px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition ${
+              className={`block px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-green-700 transition ${
                 index !== activeCategories.length - 1 ? 'border-b border-gray-50' : ''
               }`}
             >
@@ -47,7 +47,7 @@ const CategoryDropdown = () => {
                     {category.productCount} products
                   </p>
                 </div>
-                <span className="text-blue-600 opacity-0 group-hover:opacity-100 transition">
+                <span className="text-green-700 opacity-0 group-hover:opacity-100 transition">
                   →
                 </span>
               </div>
