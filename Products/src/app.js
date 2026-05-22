@@ -9,14 +9,17 @@ import { globalErrorHandler } from "./utils/error.utils.js";
 
 const app = express();
 
-
 app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
   }),
 );
-app.use(express.json());
+
+// ✅ INCREASE REQUEST SIZE LIMIT (ADD THIS - BEFORE OTHER MIDDLEWARE)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
 app.use(cookieParser());
 applySecurityMiddleware(app);
 
@@ -31,7 +34,6 @@ app.use('/api/blogs', blogRoutes);
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
-
 
 app.use(globalErrorHandler);
 
