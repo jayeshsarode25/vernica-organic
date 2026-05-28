@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { getMe } from "./redux/reducer/userSlice";
 import { getCart } from "./redux/reducer/cartSlice";
 import RoleRedirect from "./routes/Roleredirect";
+import VernikaChatbot from "./components/chatbot/VernikaChatbot";
 
 
 const App = () => {
@@ -34,6 +35,7 @@ const App = () => {
       <RoleRedirect/>
       <Navbar />  
       <MainRoutes />
+      <VernikaChatbot />
     </div>
   );
 };
