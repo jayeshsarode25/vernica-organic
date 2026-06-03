@@ -18,6 +18,9 @@ export const fetchCategoryByIdService = (id) =>
 export const fetchCategoryBySlugService = (slug) =>
   categoryApi.get(`/slug/${slug}`);
 
+export const fetchSubCategoriesService = () =>
+  categoryApi.get("/sub-categories");
+
 // ─── Protected Endpoints (admin) ─────────────────────────────────
 
 export const createCategoryService = (categoryData) =>
@@ -33,6 +36,7 @@ export default {
   fetchAllCategories,
   fetchCategoryByIdService,
   fetchCategoryBySlugService,
+  fetchSubCategoriesService,
   createCategoryService,
   updateCategoryService,
   deleteCategoryService,

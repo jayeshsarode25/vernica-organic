@@ -24,6 +24,26 @@ const categorySchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    subCategories: {
+      type: [
+        {
+          name: {
+            type: String,
+            required: true,
+            enum: ["Male", "Female"],
+          },
+          slug: {
+            type: String,
+            required: true,
+            enum: ["male", "female"],
+          },
+        },
+      ],
+      default: [
+        { name: "Male", slug: "male" },
+        { name: "Female", slug: "female" },
+      ],
+    },
     isActive: {
       type: Boolean,
       default: true,

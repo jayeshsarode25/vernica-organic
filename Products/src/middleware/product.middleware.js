@@ -62,6 +62,13 @@ const createProductValidators = [
       }
     }),
 
+  body("subCategory")
+    .optional()
+    .trim()
+    .toLowerCase()
+    .isIn(["male", "female"])
+    .withMessage("subCategory must be male or female"),
+
   body("rating")
     .optional()
     .isFloat({ min: 0, max: 5 })
@@ -115,6 +122,13 @@ const updateProductValidators = [
         throw new Error("Category is not active");
       }
     }),
+
+  body("subCategory")
+    .optional()
+    .trim()
+    .toLowerCase()
+    .isIn(["male", "female"])
+    .withMessage("subCategory must be male or female"),
 
   body("rating")
     .optional()

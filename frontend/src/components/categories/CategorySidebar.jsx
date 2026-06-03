@@ -2,9 +2,14 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCategories } from "../../redux/reducer/Categoryslice";
 
-const CategorySidebar = ({ selected, onSelect }) => {
+const CategorySidebar = ({
+  selected,
+  onSelect,
+  selectedSubCategory = "All",
+  onSubCategorySelect,
+}) => {
   const dispatch = useDispatch();
-  const { categories, loading } = useSelector((state) => state.categories);
+  const { categories, subCategories, loading } = useSelector((state) => state.categories);
 
   useEffect(() => {
     dispatch(fetchCategories());
@@ -71,6 +76,39 @@ const CategorySidebar = ({ selected, onSelect }) => {
             ))}
         </ul>
       )}
+
+      <div className="border-t border-gray-100 mt-5 pt-5">
+        <h3 className="text-sm font-semibold text-gray-800 mb-3">
+          Sub-category
+        </h3>
+        <div className="space-y-1">
+          <button
+            onClick={() => onSubCategorySelect?.("All")}
+            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              selectedSubCategory === "All"
+                ? "bg-emerald-600 text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            All
+          </button>
+
+          {Array.isArray(subCategories) &&
+            subCategories.map((sub) => (
+              <button
+                key={sub.slug}
+                onClick={() => onSubCategorySelect?.(sub.slug)}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  selectedSubCategory === sub.slug
+                    ? "bg-emerald-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                {sub.name}
+              </button>
+            ))}
+        </div>
+      </div>
     </div>
   );
 };

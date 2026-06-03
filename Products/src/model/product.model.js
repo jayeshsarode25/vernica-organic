@@ -41,6 +41,13 @@ const productSchema = new mongoose.Schema({
     ref: "category",
     required: [true, "Product must belong to a category"],
   },
+  subCategory: {
+    type: String,
+    enum: ["male", "female"],
+    default: "male",
+    lowercase: true,
+    trim: true,
+  },
   // Optional: Add rating for featured products section
   rating: {
     type: Number,
@@ -60,6 +67,7 @@ const productSchema = new mongoose.Schema({
 
 productSchema.index({ title: "text", description: "text" });
 productSchema.index({ categoryId: 1 }); // Index for category queries
+productSchema.index({ categoryId: 1, subCategory: 1 });
 productSchema.index({ isActive: 1 }); // Index for active products
 
 const productModel = mongoose.model("product", productSchema);

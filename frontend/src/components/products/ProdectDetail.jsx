@@ -66,6 +66,11 @@ const ProductDetail = () => {
     dispatch(addToCart({ productId: single._id, qty }));
   };
 
+  const categoryName = single.categoryId?.name;
+  const subCategoryLabel = single.subCategory
+    ? single.subCategory.charAt(0).toUpperCase() + single.subCategory.slice(1)
+    : null;
+
   return (
     <>
       <div className="max-w-6xl mx-auto px-6 py-16">
@@ -132,9 +137,9 @@ const ProductDetail = () => {
           {/* ── RIGHT: Product Info ────────────────────── */}
           <div className="flex flex-col gap-0 pt-2">
 
-            {single.category && (
+            {(categoryName || subCategoryLabel) && (
               <span className="text-xs font-semibold tracking-[0.15em] uppercase text-green-500 mb-3">
-                {single.category}
+                {[categoryName, subCategoryLabel].filter(Boolean).join(" / ")}
               </span>
             )}
 

@@ -3,6 +3,7 @@ import {
   fetchAllCategories,
   fetchCategoryByIdService,
   fetchCategoryBySlugService,
+  fetchSubCategoriesService,
   createCategoryService,
   updateCategoryService,
   deleteCategoryService,
@@ -57,6 +58,18 @@ export const fetchCategoryBySlug = createAsyncThunk(
   }
 );
 
+export const fetchSubCategories = createAsyncThunk(
+  'categories/fetchSubCategories',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetchSubCategoriesService();
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 export const createCategory = createAsyncThunk(
   'categories/createCategory',
   async (categoryData, { rejectWithValue }) => {
@@ -99,6 +112,10 @@ export const deleteCategory = createAsyncThunk(
 
 const initialState = {
   categories:       [],
+  subCategories:    [
+    { name: 'Male', slug: 'male' },
+    { name: 'Female', slug: 'female' },
+  ],
   selectedCategory: null,
   loading:          false,
   error:            null,
@@ -140,6 +157,7 @@ const categorySlice = createSlice({
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.loading     = false;
         state.categories  = action.payload.data || [];
+        state.subCategories = action.payload.subCategories || state.subCategories;
         state.lastFetched = Date.now(); // ✅ stamp the cache
       })
       .addCase(fetchCategories.rejected, (state, action) => {
@@ -175,6 +193,14 @@ const categorySlice = createSlice({
       .addCase(fetchCategoryBySlug.rejected, (state, action) => {
         state.loading = false;
         state.error   = action.payload;
+      });
+
+    builder
+      .addCase(fetchSubCategories.fulfilled, (state, action) => {
+        state.subCategories = action.payload.data || state.subCategories;
+      })
+      .addCase(fetchSubCategories.rejected, (state, action) => {
+        state.error = action.payload;
       });
 
     // Create — ✅ invalidate cache so next fetch gets fresh data

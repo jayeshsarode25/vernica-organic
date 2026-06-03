@@ -68,15 +68,44 @@ const VernikaChatbot = () => {
 
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const hasShownConnectionErrorRef = useRef(false);
   const sessionId = useMemo(() => getSessionId(), []);
 
   useEffect(() => {
+    if (!isOpen) {
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+      return undefined;
+    }
+
     const socket = io(CHAT_SOCKET_URL, {
       withCredentials: true,
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
+      reconnectionAttempts: 2,
+      timeout: 5000,
     });
 
     socketRef.current = socket;
+
+    socket.on("connect", () => {
+      hasShownConnectionErrorRef.current = false;
+    });
+
+    socket.on("connect_error", () => {
+      setIsTyping(false);
+
+      if (hasShownConnectionErrorRef.current) return;
+      hasShownConnectionErrorRef.current = true;
+
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        createMessage(
+          "bot",
+          "Vernika Beauty Assistant is offline right now. Please start the AI chat server and try again.",
+          "error",
+        ),
+      ]);
+    });
 
     socket.on("bot_typing", (payload) => {
       setIsTyping(Boolean(payload?.isTyping));
@@ -106,12 +135,11 @@ const VernikaChatbot = () => {
     });
 
     return () => {
-      socket.off("bot_typing");
-      socket.off("bot_reply");
-      socket.off("chat_error");
+      socket.removeAllListeners();
       socket.disconnect();
+      socketRef.current = null;
     };
-  }, []);
+  }, [isOpen]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -128,6 +156,19 @@ const VernikaChatbot = () => {
     ]);
     setInputValue("");
     setIsTyping(true);
+
+    if (!socketRef.current?.connected) {
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        createMessage(
+          "bot",
+          "Vernika Beauty Assistant is offline right now. Please start the AI chat server and try again.",
+          "error",
+        ),
+      ]);
+      setIsTyping(false);
+      return;
+    }
 
     socketRef.current?.emit("user_message", {
       sessionId,

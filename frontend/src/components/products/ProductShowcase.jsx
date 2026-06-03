@@ -10,9 +10,10 @@ const ProductShowcase = () => {
   const { list: products, loading: productsLoading } = useSelector(
     (state) => state.products
   );
-  const { categories } = useSelector((state) => state.categories);
+  const { categories, subCategories } = useSelector((state) => state.categories);
 
   const [selectedFilter, setSelectedFilter] = useState("All");
+  const [selectedSubFilter, setSelectedSubFilter] = useState("All");
 
   useEffect(() => {
     dispatch(featchProducts());
@@ -20,7 +21,7 @@ const ProductShowcase = () => {
   }, [dispatch]);
 
   // ── filtering ──────────────────────────────────────────────────
-  const filteredProducts =
+  const categoryFiltered =
     selectedFilter === "All"
       ? products
       : products.filter(
@@ -28,6 +29,11 @@ const ProductShowcase = () => {
             p.categoryId?._id === selectedFilter ||
             p.categoryId === selectedFilter
         );
+
+  const filteredProducts =
+    selectedSubFilter === "All"
+      ? categoryFiltered
+      : categoryFiltered.filter((p) => p.subCategory === selectedSubFilter);
 
   // ── loading skeleton ───────────────────────────────────────────
   if (productsLoading) {
@@ -79,6 +85,34 @@ const ProductShowcase = () => {
                 }`}
               >
                 {cat.name}
+              </button>
+            ))}
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-3 mb-8">
+          <button
+            onClick={() => setSelectedSubFilter("All")}
+            className={`px-4 sm:px-6 py-2 rounded-full font-medium transition-all ${
+              selectedSubFilter === "All"
+                ? "bg-emerald-600 text-white shadow-lg"
+                : "bg-white text-gray-700 hover:bg-gray-100 shadow"
+            }`}
+          >
+            All
+          </button>
+
+          {Array.isArray(subCategories) &&
+            subCategories.map((sub) => (
+              <button
+                key={sub.slug}
+                onClick={() => setSelectedSubFilter(sub.slug)}
+                className={`px-4 sm:px-6 py-2 rounded-full font-medium transition-all ${
+                  selectedSubFilter === sub.slug
+                    ? "bg-emerald-600 text-white shadow-lg"
+                    : "bg-white text-gray-700 hover:bg-gray-100 shadow"
+                }`}
+              >
+                {sub.name}
               </button>
             ))}
         </div>

@@ -10,6 +10,7 @@ const router = express.Router();
 // ====================================
 
 router.get("/", categoryController.getCategories);
+router.get("/sub-categories", categoryController.getSubCategories);
 router.get("/slug/:slug", categoryController.getCategoryBySlug);
 
 // ADMIN ROUTES (WITHOUT validators for now)

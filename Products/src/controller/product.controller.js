@@ -12,6 +12,15 @@ const buildSortObj = (sort) => {
   return { createdAt: -1 }; // default: newest
 };
 
+const normalizeSubCategory = (value) =>
+  typeof value === "string" ? value.trim().toLowerCase() : value;
+
+const assertValidSubCategory = (subCategory) => {
+  if (!["male", "female"].includes(subCategory)) {
+    throw new AppError("Sub-category must be male or female", 400);
+  }
+};
+
 // ─────────────────────────────────────────────────────────────────
 // CREATE PRODUCT
 // ─────────────────────────────────────────────────────────────────
@@ -22,9 +31,13 @@ export const createProduct = catchAsync(async (req, res) => {
     priceAmount,
     priceCurrency = "INR",
     categoryId,
+    subCategory = "male",
     rating = 0,
     stock  = 0,
   } = req.body;
+
+  const normalizedSubCategory = normalizeSubCategory(subCategory);
+  assertValidSubCategory(normalizedSubCategory);
 
   if (!categoryId) {
     throw new AppError("Category ID is required", 400);
@@ -67,7 +80,7 @@ export const createProduct = catchAsync(async (req, res) => {
   const product = await productModel.create({
     title, description, price,
     images: imageUrls, video: videoUrl,
-    categoryId, rating, stock,
+    categoryId, subCategory: normalizedSubCategory, rating, stock,
   });
 
   // update category product count
@@ -97,7 +110,18 @@ export const updateProduct = catchAsync(async (req, res) => {
     throw new AppError("Product not found", 404);
   }
 
-  const allowUpdates = ["title", "description", "price", "categoryId", "rating", "stock", "isActive"];
+  const allowUpdates = [
+    "title",
+    "description",
+    "price",
+    "priceAmount",
+    "priceCurrency",
+    "categoryId",
+    "subCategory",
+    "rating",
+    "stock",
+    "isActive",
+  ];
 
   for (const key of Object.keys(req.body)) {
     if (!allowUpdates.includes(key)) continue;
@@ -119,6 +143,14 @@ export const updateProduct = catchAsync(async (req, res) => {
     } else if (key === "price" && typeof req.body.price === "object") {
       if (req.body.price.amount   !== undefined) product.price.amount   = Number(req.body.price.amount);
       if (req.body.price.currency !== undefined) product.price.currency = req.body.price.currency;
+    } else if (key === "priceAmount") {
+      product.price.amount = Number(req.body.priceAmount);
+    } else if (key === "priceCurrency") {
+      product.price.currency = req.body.priceCurrency;
+    } else if (key === "subCategory") {
+      const normalizedSubCategory = normalizeSubCategory(req.body.subCategory);
+      assertValidSubCategory(normalizedSubCategory);
+      product.subCategory = normalizedSubCategory;
     } else {
       product[key] = req.body[key];
     }
@@ -158,7 +190,7 @@ export const deleteProduct = catchAsync(async (req, res) => {
 // GET PRODUCTS (with filters + pagination)
 // ─────────────────────────────────────────────────────────────────
 export const getProduct = catchAsync(async (req, res) => {
-  const { q, skip = 0, limit = 10, categoryId, categorySlug } = req.query;
+  const { q, skip = 0, limit = 10, categoryId, categorySlug, subCategory } = req.query;
 
   const minPriceRaw = req.query.minprice ?? req.query.minPrice;
   const maxPriceRaw = req.query.maxprice ?? req.query.maxPrice;
@@ -187,6 +219,12 @@ export const getProduct = catchAsync(async (req, res) => {
   if (categorySlug) {
     const category = await categoryModel.findOne({ slug: categorySlug, isActive: true });
     if (category) filter.categoryId = category._id;
+  }
+
+  if (subCategory) {
+    const normalizedSubCategory = normalizeSubCategory(subCategory);
+    assertValidSubCategory(normalizedSubCategory);
+    filter.subCategory = normalizedSubCategory;
   }
 
   const safeLimit = Math.min(Number(limit), 50);
@@ -233,12 +271,16 @@ export const getProductById = catchAsync(async (req, res) => {
 // GET PRODUCT COUNT (admin)
 // ─────────────────────────────────────────────────────────────────
 export const getProductCount = catchAsync(async (req, res) => {
-  const [totalProducts, countByCategory] = await Promise.all([
+  const [totalProducts, countByCategory, countBySubCategory] = await Promise.all([
     productModel.countDocuments({ isActive: true }),
     productModel.aggregate([
       { $match: { isActive: true } },
       { $group: { _id: "$categoryId", count: { $sum: 1 } } },
       { $lookup: { from: "categories", localField: "_id", foreignField: "_id", as: "category" } },
+    ]),
+    productModel.aggregate([
+      { $match: { isActive: true } },
+      { $group: { _id: "$subCategory", count: { $sum: 1 } } },
     ]),
   ]);
 
@@ -249,6 +291,10 @@ export const getProductCount = catchAsync(async (req, res) => {
       categoryName: item.category[0]?.name,
       count:        item.count,
     })),
+    countBySubCategory: countBySubCategory.map((item) => ({
+      subCategory: item._id,
+      count:       item.count,
+    })),
   });
 });
 
@@ -257,7 +303,7 @@ export const getProductCount = catchAsync(async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 export const getProductsByCategory = catchAsync(async (req, res) => {
   const { categoryId }              = req.params;
-  const { skip = 0, limit = 12, sort = "newest" } = req.query;
+  const { skip = 0, limit = 12, sort = "newest", subCategory } = req.query;
 
   if (!mongoose.Types.ObjectId.isValid(categoryId)) {
     throw new AppError("Invalid Category ID", 400);
@@ -269,15 +315,22 @@ export const getProductsByCategory = catchAsync(async (req, res) => {
   }
 
   const safeLimit = Math.min(Number(limit), 50);
+  const filter = { categoryId, isActive: true };
+
+  if (subCategory) {
+    const normalizedSubCategory = normalizeSubCategory(subCategory);
+    assertValidSubCategory(normalizedSubCategory);
+    filter.subCategory = normalizedSubCategory;
+  }
 
   const [products, totalCount] = await Promise.all([
     productModel
-      .find({ categoryId, isActive: true })
+      .find(filter)
       .populate("categoryId", "name slug description")
       .sort(buildSortObj(sort))
       .skip(Number(skip))
       .limit(safeLimit),
-    productModel.countDocuments({ categoryId, isActive: true }),
+    productModel.countDocuments(filter),
   ]);
 
   res.json({
@@ -293,7 +346,7 @@ export const getProductsByCategory = catchAsync(async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 export const getProductsByCategorySlug = catchAsync(async (req, res) => {
   const { slug }                    = req.params;
-  const { skip = 0, limit = 12, sort = "newest" } = req.query;
+  const { skip = 0, limit = 12, sort = "newest", subCategory } = req.query;
 
   const category = await categoryModel.findOne({ slug, isActive: true });
   if (!category) {
@@ -301,15 +354,22 @@ export const getProductsByCategorySlug = catchAsync(async (req, res) => {
   }
 
   const safeLimit = Math.min(Number(limit), 50);
+  const filter = { categoryId: category._id, isActive: true };
+
+  if (subCategory) {
+    const normalizedSubCategory = normalizeSubCategory(subCategory);
+    assertValidSubCategory(normalizedSubCategory);
+    filter.subCategory = normalizedSubCategory;
+  }
 
   const [products, totalCount] = await Promise.all([
     productModel
-      .find({ categoryId: category._id, isActive: true })
+      .find(filter)
       .populate("categoryId", "name slug description")
       .sort(buildSortObj(sort))
       .skip(Number(skip))
       .limit(safeLimit),
-    productModel.countDocuments({ categoryId: category._id, isActive: true }),
+    productModel.countDocuments(filter),
   ]);
 
   res.json({

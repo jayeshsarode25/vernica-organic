@@ -89,7 +89,7 @@ export const applySecurityMiddleware = (app) => {
   app.use(manualSanitize); // ✅ replaces app.use(mongoSanitize())
   app.use(
     hpp({
-      whitelist: ["sort", "skip", "limit", "minPrice", "maxPrice", "categoryId"],
+      whitelist: ["sort", "skip", "limit", "minPrice", "maxPrice", "categoryId", "subCategory"],
     })
   );
 };

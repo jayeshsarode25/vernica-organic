@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, Link } from "react-router-dom";
 import { fetchProductsBySlug, resetCategoryPage } from "../redux/reducer/productSlice";
+import { fetchCategories } from "../redux/reducer/Categoryslice";
 import ProductCart from "../components/products/ProductCart";
 
 const SORT_OPTIONS = [
@@ -20,20 +21,33 @@ const CategoryProducts = () => {
   const { list, loading, error, pagination, category } = useSelector(
     (state) => state.products.categoryPage
   );
+  const { subCategories } = useSelector((state) => state.categories);
 
   const [sort, setSort] = useState("newest");
+  const [subCategory, setSubCategory] = useState("All");
   const [skip, setSkip] = useState(0);
 
   // reset page to 1 when slug or sort changes
   useEffect(() => {
     setSkip(0);
-  }, [slug, sort]);
+  }, [slug, sort, subCategory]);
+
+  useEffect(() => {
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   // fetch from backend — uses dedicated /category-slug/:slug endpoint
   useEffect(() => {
+    const params = {
+      skip,
+      limit: LIMIT,
+      sort,
+      ...(subCategory !== "All" ? { subCategory } : {}),
+    };
+
     dispatch(resetCategoryPage());
-    dispatch(fetchProductsBySlug({ slug, params: { skip, limit: LIMIT, sort } }));
-  }, [dispatch, slug, sort, skip]);
+    dispatch(fetchProductsBySlug({ slug, params }));
+  }, [dispatch, slug, sort, skip, subCategory]);
 
   // cleanup on unmount
   useEffect(() => () => dispatch(resetCategoryPage()), [dispatch]);
@@ -102,16 +116,31 @@ const CategoryProducts = () => {
             </p>
           </div>
 
-          {/* Sort */}
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 bg-white self-start sm:self-auto"
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+          <div className="flex flex-col sm:flex-row gap-3 self-start sm:self-auto">
+            <select
+              value={subCategory}
+              onChange={(e) => setSubCategory(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 bg-white"
+            >
+              <option value="All">All</option>
+              {Array.isArray(subCategories) &&
+                subCategories.map((sub) => (
+                  <option key={sub.slug} value={sub.slug}>
+                    {sub.name}
+                  </option>
+                ))}
+            </select>
+
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 bg-white"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* ── Products Grid ── */}

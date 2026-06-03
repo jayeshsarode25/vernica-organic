@@ -1,12 +1,11 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { featchProducts } from "../../redux/reducer/productSlice";
 import ProductCard from "./ProductCart";
 import ProductLoader from "./ProductLoader";
 
-const ProductGrid = ({ selectedCategory = "All" }) => {
+const ProductGrid = ({ selectedCategory = "All", selectedSubCategory = "All" }) => {
   const dispatch = useDispatch();
-
   const q = useSelector((state) => state.search.query) || "";
 
   const {
@@ -18,26 +17,17 @@ const ProductGrid = ({ selectedCategory = "All" }) => {
 
   const { skip = 0, limit = 10, total = 0 } = pagination;
 
+  const buildParams = useCallback((nextSkip = 0) => ({
+    skip: nextSkip,
+    limit,
+    ...(selectedCategory !== "All" ? { categoryId: selectedCategory } : {}),
+    ...(selectedSubCategory !== "All" ? { subCategory: selectedSubCategory } : {}),
+    ...(q.trim() ? { q: q.trim() } : {}),
+  }), [limit, q, selectedCategory, selectedSubCategory]);
+
   useEffect(() => {
-    dispatch(featchProducts({ skip, limit }));
-  }, [dispatch, skip, limit]);
-
-  // ── 1. filter by category ──────────────────────────────────────
-  const categoryFiltered =
-    selectedCategory === "All"
-      ? list
-      : list.filter(
-          (p) =>
-            p.categoryId?._id === selectedCategory ||
-            p.categoryId === selectedCategory
-        );
-
-  // ── 2. filter by search query ──────────────────────────────────
-  const filteredProducts = !q?.trim()
-    ? categoryFiltered
-    : categoryFiltered.filter((p) =>
-        p?.title?.toLowerCase().includes(q.toLowerCase())
-      );
+    dispatch(featchProducts(buildParams(0)));
+  }, [buildParams, dispatch]);
 
   if (loading)
     return (
@@ -60,53 +50,39 @@ const ProductGrid = ({ selectedCategory = "All" }) => {
 
   return (
     <>
-      {/* Results count */}
       <p className="text-sm text-gray-400 mb-4">
-        Showing {filteredProducts.length} product
-        {filteredProducts.length !== 1 ? "s" : ""}
+        Showing {list.length} product{list.length !== 1 ? "s" : ""}
         {selectedCategory !== "All" ? " in this category" : ""}
+        {selectedSubCategory !== "All" ? ` for ${selectedSubCategory}` : ""}
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
-        {filteredProducts.length === 0 ? (
-          <p className="col-span-full text-center text-gray-500 mt-10">
-            No products found
-          </p>
-        ) : (
-          filteredProducts.map((product) => (
-            <ProductCard key={product._id} product={product} />
-          ))
-        )}
+        {list.map((product) => (
+          <ProductCard key={product._id} product={product} />
+        ))}
       </div>
 
-      {/* Pagination — only show when viewing All or enough results */}
-      {selectedCategory === "All" && (
-        <div className="flex justify-center items-center mt-12 gap-4">
-          <button
-            onClick={() =>
-              dispatch(featchProducts({ skip: skip - limit, limit }))
-            }
-            disabled={skip === 0}
-            className="px-5 py-2 rounded-lg border hover:bg-gray-100 disabled:opacity-40"
-          >
-            Prev
-          </button>
+      <div className="flex justify-center items-center mt-12 gap-4">
+        <button
+          onClick={() => dispatch(featchProducts(buildParams(skip - limit)))}
+          disabled={skip === 0}
+          className="px-5 py-2 rounded-lg border hover:bg-gray-100 disabled:opacity-40"
+        >
+          Prev
+        </button>
 
-          <span className="text-sm text-gray-500">
-            Page {Math.floor(skip / limit) + 1}
-          </span>
+        <span className="text-sm text-gray-500">
+          Page {Math.floor(skip / limit) + 1}
+        </span>
 
-          <button
-            onClick={() =>
-              dispatch(featchProducts({ skip: skip + limit, limit }))
-            }
-            disabled={skip + limit >= total}
-            className="px-5 py-2 rounded-lg border hover:bg-gray-100 disabled:opacity-40"
-          >
-            Next
-          </button>
-        </div>
-      )}
+        <button
+          onClick={() => dispatch(featchProducts(buildParams(skip + limit)))}
+          disabled={skip + limit >= total}
+          className="px-5 py-2 rounded-lg border hover:bg-gray-100 disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
     </>
   );
 };

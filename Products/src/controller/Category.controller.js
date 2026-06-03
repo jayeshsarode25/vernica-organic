@@ -3,6 +3,19 @@ import categoryModel from "../model/category.model.js";
 import { AppError, catchAsync } from "../utils/error.utils.js"; 
 
 // ── shared slug generator ──────────────────────────────────────────
+const DEFAULT_SUB_CATEGORIES = [
+  { name: "Male", slug: "male" },
+  { name: "Female", slug: "female" },
+];
+
+const withDefaultSubCategories = (category) => ({
+  ...category,
+  subCategories:
+    Array.isArray(category.subCategories) && category.subCategories.length
+      ? category.subCategories
+      : DEFAULT_SUB_CATEGORIES,
+});
+
 const generateSlug = (name) =>
   name
     .toLowerCase()
@@ -23,7 +36,16 @@ export const getCategories = catchAsync(async (req, res) => {
     success: true,
     message: "Categories retrieved successfully",
     count:   categories.length,
-    data:    categories,
+    subCategories: DEFAULT_SUB_CATEGORIES,
+    data:    categories.map(withDefaultSubCategories),
+  });
+});
+
+export const getSubCategories = catchAsync(async (req, res) => {
+  res.json({
+    success: true,
+    message: "Sub-categories retrieved successfully",
+    data: DEFAULT_SUB_CATEGORIES,
   });
 });
 
@@ -42,7 +64,11 @@ export const getCategoryById = catchAsync(async (req, res) => {
     throw new AppError("Category not found", 404);
   }
 
-  res.json({ success: true, message: "Category retrieved successfully", data: category });
+  res.json({
+    success: true,
+    message: "Category retrieved successfully",
+    data: withDefaultSubCategories(category),
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────
@@ -59,7 +85,11 @@ export const getCategoryBySlug = catchAsync(async (req, res) => {
     throw new AppError("Category not found", 404);
   }
 
-  res.json({ success: true, message: "Category retrieved successfully", data: category });
+  res.json({
+    success: true,
+    message: "Category retrieved successfully",
+    data: withDefaultSubCategories(category),
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────
@@ -93,6 +123,7 @@ export const createCategory = catchAsync(async (req, res) => {
     description,
     slug:         generateSlug(name),
     displayOrder: displayOrder || 0,
+    subCategories: DEFAULT_SUB_CATEGORIES,
   });
 
   res.status(201).json({

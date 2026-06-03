@@ -15,7 +15,7 @@ const ProductModal = ({ onClose, existing }) => {
   const dispatch = useDispatch();
   const isEdit = Boolean(existing);
 
-  const { categories } = useSelector((state) => state.categories);
+  const { categories, subCategories } = useSelector((state) => state.categories);
 
   const [form, setForm] = useState({
     title:       existing?.title ?? "",
@@ -24,6 +24,7 @@ const ProductModal = ({ onClose, existing }) => {
     currency:    existing?.price?.currency ?? "INR",
     stock:       existing?.stock ?? "",
     categoryId:  existing?.categoryId?._id ?? existing?.categoryId ?? "",
+    subCategory: existing?.subCategory ?? "male",
   });
 
   const [images, setImages] = useState([]);
@@ -46,6 +47,11 @@ const ProductModal = ({ onClose, existing }) => {
       return;
     }
 
+    if (!form.subCategory) {
+      setError("Please select a sub-category");
+      return;
+    }
+
     setSaving(true);
     try {
       if (isEdit) {
@@ -59,6 +65,7 @@ const ProductModal = ({ onClose, existing }) => {
               priceCurrency: form.currency,
               stock:         Number(form.stock),
               categoryId:    form.categoryId,
+              subCategory:   form.subCategory,
             },
           })
         );
@@ -72,6 +79,7 @@ const ProductModal = ({ onClose, existing }) => {
         fd.append("priceCurrency", form.currency);
         fd.append("stock",         form.stock);
         fd.append("categoryId",    form.categoryId);
+        fd.append("subCategory",   form.subCategory);
         images.forEach((img) => fd.append("imagesUrls", img));
         if (video) fd.append("videoUrl", video);
 
@@ -162,6 +170,26 @@ const ProductModal = ({ onClose, existing }) => {
             </select>
           </div>
 
+          {/* Sub-category */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Sub-category *
+            </label>
+            <select
+              required
+              value={form.subCategory}
+              onChange={set("subCategory")}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+            >
+              {Array.isArray(subCategories) &&
+                subCategories.map((sub) => (
+                  <option key={sub.slug} value={sub.slug}>
+                    {sub.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
           {/* Price + Currency */}
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
@@ -189,7 +217,6 @@ const ProductModal = ({ onClose, existing }) => {
               >
                 <option>INR</option>
                 <option>USD</option>
-                <option>EUR</option>
               </select>
             </div>
           </div>
@@ -280,6 +307,7 @@ const AdminProducts = () => {
   const { list: products, loading, error } = useSelector(
     (state) => state.products
   );
+  const { subCategories } = useSelector((state) => state.categories);
 
   const [modal,      setModal]      = useState(null); // null | "add" | product object
   const [deletingId, setDeletingId] = useState(null);
@@ -347,6 +375,9 @@ const AdminProducts = () => {
                 Category
               </th>
               <th className="text-left px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wider">
+                Sub-category
+              </th>
+              <th className="text-left px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wider">
                 Price
               </th>
               <th className="text-left px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wider">
@@ -364,7 +395,7 @@ const AdminProducts = () => {
           <tbody className="divide-y divide-gray-100">
             {products.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center py-10 text-gray-400">
+                <td colSpan={7} className="text-center py-10 text-gray-400">
                   No products found
                 </td>
               </tr>
@@ -374,6 +405,10 @@ const AdminProducts = () => {
               const isDeleting   = deletingId === product._id;
               const firstImage   = product.images?.[0]?.url;
               const categoryName = product.categoryId?.name ?? "—";
+              const subCategoryName =
+                subCategories?.find((sub) => sub.slug === product.subCategory)?.name ??
+                product.subCategory ??
+                "—";
 
               return (
                 <tr
@@ -409,6 +444,13 @@ const AdminProducts = () => {
                   <td className="px-5 py-3.5">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
                       {categoryName}
+                    </span>
+                  </td>
+
+                  {/* Sub-category */}
+                  <td className="px-5 py-3.5">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 capitalize">
+                      {subCategoryName}
                     </span>
                   </td>
 

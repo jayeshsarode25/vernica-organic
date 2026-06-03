@@ -1,13 +1,14 @@
-import { ShoppingCart } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { addToCart } from "../../redux/reducer/cartSlice";
 
 const ProductCart = ({ product }) => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const image = product.images?.[0]?.url;
+  const subCategoryLabel = product.subCategory
+    ? product.subCategory.charAt(0).toUpperCase() + product.subCategory.slice(1)
+    : null;
   const items = useSelector((state) => state.cart.items);
 
  
@@ -38,7 +39,14 @@ const ProductCart = ({ product }) => {
       </Link>
 
       <div className="mt-4 space-y-2">
-        <h3 className="font-semibold text-lg line-clamp-1">{product.title}</h3>
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-semibold text-lg line-clamp-1">{product.title}</h3>
+          {subCategoryLabel && (
+            <span className="shrink-0 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full">
+              {subCategoryLabel}
+            </span>
+          )}
+        </div>
 
         <p className="text-gray-500 text-sm line-clamp-2">
           {product.description || "No description"}
