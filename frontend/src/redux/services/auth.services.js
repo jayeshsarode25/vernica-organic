@@ -12,6 +12,7 @@ export const sendLoginOtpApi = (phone) =>
   authAPI.post("/login-phone", { phone });
 export const verifyLoginOtpApi = (phone, otp) =>
   authAPI.post("/verify-login-otp", { phone, otp });
+export const resendOtpApi = (data) => authAPI.post("/resend-otp", data);
 export const getMeApi = () => authAPI.get("/me");
 
 

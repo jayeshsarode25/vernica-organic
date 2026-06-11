@@ -3,6 +3,7 @@ import {
   Heart,
   Loader2,
   MessageCircle,
+  Phone,
   Send,
   Sparkles,
   X,
@@ -14,14 +15,62 @@ const CHAT_SOCKET_URL =
   import.meta.env.VITE_CHAT_SOCKET_URL || "http://localhost:5000";
 
 const WELCOME_MESSAGE =
-  "Hi beautiful 👋 I’m Vernika Beauty Assistant. Tell me your skin concern and I’ll help you choose the right product.";
+  "Hi beautiful 👋 I’m Vernika Beauty Assistant. How can I help you today?";
 
-const QUICK_REPLIES = [
-  "Depuffing",
-  "Brightening",
-  "Protection",
-  "How to use",
-  "Order now",
+const MAIN_QUICK_REPLIES = [
+  "Ingredient Purity & Certifications",
+  "Skin/Hair Consultation",
+  "How to Use & Product Safety",
+  "Orders, Shipping & Payments",
+  "Talk to Beauty Expert",
+];
+
+const CATEGORY_QUICK_REPLIES = {
+  "Ingredient Purity & Certifications": [
+    "Are your products 100% organic and natural?",
+    "What are Ecocert and COSMOS ingredients?",
+    "Are your products free from sulfates, parabens, and synthetic fragrances?",
+    "Are your products cruelty-free and vegan?",
+  ],
+  "Skin/Hair Consultation": [
+    "What is your skin concern?",
+    "Is this product suitable for my skin type?",
+    "Which product is best for glowing and healthy skin?",
+    "Can pregnant or breastfeeding women use your products?",
+  ],
+  "How to Use & Product Safety": [
+    "How do I use this product for best results?",
+    "How long will it take to see visible results?",
+    "Do natural products have side effects? Should I do a patch test?",
+    "What is the shelf life of your organic products?",
+  ],
+  "Orders, Shipping & Payments": [
+    "I want to order now",
+    "Do you offer COD and Free Shipping?",
+    "How can I track my order status?",
+    "What is your return or exchange policy?",
+  ],
+  "Talk to Beauty Expert": [
+    "Talk to a Beauty Expert",
+    "Chat with a Human",
+    "I need help choosing a product",
+    "I have a specific skin concern",
+  ],
+};
+
+const CONCERN_QUICK_REPLIES = [
+  "Acne & Pimples 🛑",
+  "Dark Spots & Pigmentation ✨",
+  "Dryness & Dull Skin 💧",
+  "Anti-Aging & Wrinkles ⏳",
+];
+
+const SKIN_TYPE_QUICK_REPLIES = [
+  "Dry",
+  "Oily",
+  "Sensitive",
+  "Combination",
+  "Normal",
 ];
 
 const MotionButton = motion.button;
@@ -43,12 +92,37 @@ const getSessionId = () => {
   return nextSession;
 };
 
-const createMessage = (sender, text, status = "sent") => ({
+const createMessage = (sender, text, status = "sent", extra = {}) => ({
   id: `${sender}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
   sender,
   text,
   status,
+  ...extra,
 });
+
+const getWhatsAppUrl = (whatsappNumber) => {
+  const digits = String(whatsappNumber || "")
+    .replace(/\D/g, "")
+    .replace(/^0+/, "");
+  const normalizedDigits = digits.startsWith("91") ? digits : `91${digits}`;
+  const message = encodeURIComponent(
+    "Hi Vernika, I need help with beauty product guidance",
+  );
+
+  return `https://wa.me/${normalizedDigits}?text=${message}`;
+};
+
+const createContactCard = (contactInfo) =>
+  createMessage(
+    "bot",
+    contactInfo?.message || "Talk to Vernika beauty expert",
+    "sent",
+    {
+      type: "contact",
+      inquiryNumber: contactInfo?.inquiryNumber,
+      whatsappNumber: contactInfo?.whatsappNumber,
+    },
+  );
 
 const TypingIndicator = () => (
   <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-md bg-[#F7C8D5]/45 px-4 py-3 text-[#2B2B2B] shadow-sm">
@@ -62,6 +136,7 @@ const VernikaChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [quickReplies, setQuickReplies] = useState(MAIN_QUICK_REPLIES);
   const [messages, setMessages] = useState(() => [
     createMessage("bot", WELCOME_MESSAGE),
   ]);
@@ -119,6 +194,15 @@ const VernikaChatbot = () => {
         createMessage("bot", payload.message),
       ]);
       setIsTyping(false);
+    });
+
+    socket.on("contact_info", (payload) => {
+      if (!payload?.inquiryNumber && !payload?.whatsappNumber) return;
+
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        createContactCard(payload),
+      ]);
     });
 
     socket.on("chat_error", (error) => {
@@ -181,6 +265,35 @@ const VernikaChatbot = () => {
     sendMessage();
   };
 
+  const getNextQuickReplies = (reply) => {
+    if (CATEGORY_QUICK_REPLIES[reply]) {
+      return CATEGORY_QUICK_REPLIES[reply];
+    }
+
+    if (
+      reply === "What is your skin concern?" ||
+      reply === "I have a specific skin concern" ||
+      reply === "I need help choosing a product"
+    ) {
+      return CONCERN_QUICK_REPLIES;
+    }
+
+    if (CONCERN_QUICK_REPLIES.includes(reply)) {
+      return SKIN_TYPE_QUICK_REPLIES;
+    }
+
+    if (reply === "Is this product suitable for my skin type?") {
+      return SKIN_TYPE_QUICK_REPLIES;
+    }
+
+    return quickReplies;
+  };
+
+  const handleQuickReply = (reply) => {
+    setQuickReplies(getNextQuickReplies(reply));
+    sendMessage(reply);
+  };
+
   return (
     <div className="fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6">
       <AnimatePresence>
@@ -223,13 +336,53 @@ const VernikaChatbot = () => {
               {messages.map((message) => {
                 const isUser = message.sender === "user";
 
+                if (message.type === "contact") {
+                  const whatsappUrl = getWhatsAppUrl(message.whatsappNumber);
+
+                  return (
+                    <div key={message.id} className="flex justify-start">
+                      <div className="max-w-[86%] rounded-2xl rounded-bl-md border border-[#F7C8D5] bg-gradient-to-br from-white to-[#FFF0F5] px-4 py-4 text-[#2B2B2B] shadow-sm">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E88BA5] text-white">
+                            <Sparkles className="h-5 w-5" aria-hidden="true" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-[#B76E79]">
+                              Talk to Vernika beauty expert
+                            </p>
+                            <div className="mt-2 flex items-center gap-2 text-sm text-[#2B2B2B]">
+                              <Phone
+                                className="h-4 w-4 shrink-0 text-[#B76E79]"
+                                aria-hidden="true"
+                              />
+                              <span>{message.inquiryNumber}</span>
+                            </div>
+                            <a
+                              href={whatsappUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#E88BA5] px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-[#E88BA5]/25 transition hover:bg-[#B76E79] focus:outline-none focus:ring-2 focus:ring-[#E88BA5]/50"
+                            >
+                              <MessageCircle
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                              />
+                              WhatsApp
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={message.id}
                     className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                      className={`max-w-[82%] whitespace-pre-line rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
                         isUser
                           ? "rounded-br-md bg-[#E88BA5] text-white"
                           : "rounded-bl-md bg-white text-[#2B2B2B]"
@@ -256,11 +409,11 @@ const VernikaChatbot = () => {
 
             <div className="border-t border-[#F7C8D5]/70 bg-white/70 px-4 py-4 backdrop-blur">
               <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
-                {QUICK_REPLIES.map((reply) => (
+                {quickReplies.map((reply) => (
                   <button
                     key={reply}
                     type="button"
-                    onClick={() => sendMessage(reply)}
+                    onClick={() => handleQuickReply(reply)}
                     className="shrink-0 rounded-full border border-[#F7C8D5] bg-white px-3 py-2 text-xs font-medium text-[#B76E79] transition hover:border-[#E88BA5] hover:bg-[#FFF7F9] focus:outline-none focus:ring-2 focus:ring-[#E88BA5]/50"
                   >
                     {reply}

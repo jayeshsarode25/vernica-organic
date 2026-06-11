@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  clearError,
+  resetFlow,
+  resendOtp,
   sendLoginOtp,
   verifyLoginOtp,
 } from "../redux/reducer/userSlice";
@@ -11,7 +14,7 @@ const Login = () => {
   const dispatch = useDispatch();
   const location = useLocation();
 
-  const { step, loading } = useSelector((state) => state.auth);
+  const { step, loading, error } = useSelector((state) => state.auth);
 
   const navigate = useNavigate();
 
@@ -20,12 +23,21 @@ const Login = () => {
     otp: "",
   });
 
+  useEffect(() => {
+    dispatch(resetFlow());
+    dispatch(clearError());
+  }, [dispatch]);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const sendOtp = () => {
     dispatch(sendLoginOtp(form.phone));
+  };
+
+  const handleResendOtp = () => {
+    dispatch(resendOtp({ phone: form.phone, type: "login" }));
   };
 
   const verifyOtp = async () => {
@@ -58,6 +70,12 @@ const Login = () => {
         <h1 className="text-2xl font-bold text-center mb-6">
           {step === "idle" ? "Login" : "Verify Otp"}
         </h1>
+
+        {error && (
+          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
 
         <button className="w-full flex items-center justify-center gap-3 border border-gray-300 py-3 rounded-lg hover:bg-gray-50 transition mb-6">
           <svg className="w-5 h-5" viewBox="0 0 48 48">
@@ -131,7 +149,7 @@ const Login = () => {
               disabled={loading}
               className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"
             >
-              {loading ? "Verifying Otp" : "Verify & Signup"}
+              {loading ? "Verifying Otp" : "Verify & Login"}
             </button>
 
             <p
@@ -140,6 +158,15 @@ const Login = () => {
             >
               Edit details
             </p>
+
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={loading}
+              className="mt-3 w-full text-sm font-medium text-green-700 hover:text-green-800 disabled:text-gray-400"
+            >
+              Resend OTP
+            </button>
           </>
         )}
       </div>

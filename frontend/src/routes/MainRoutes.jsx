@@ -34,7 +34,8 @@ const MainRoutes = () => {
         <Route path="/"          element={<Home />} />
         <Route path="/search" element={<SearchResults />} /> 
         <Route path="/login"     element={<Login />} />
-        <Route path="/sign-up"   element={<SignUp />} />
+        <Route path="/signup"   element={<SignUp />} />
+        <Route path="/sign-up"  element={<Navigate to="/signup" replace />} />
         <Route path="/blog"     element={<BlogPage />} /> 
         <Route path="/blog/:slug" element={<BlogDetail />} /> 
         <Route path="/about-us"  element={<AboutUs />} />

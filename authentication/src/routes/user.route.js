@@ -1,6 +1,7 @@
 import express from "express";
-import * as authController from "../controller/user.controller.js";
+import * as authController from "../controller/auth.controller.js";
 import createAuthMiddleware from "../middleware/auth.middleware.js";
+import { authLimiter, otpLimiter } from "../middleware/Security.middleware.js";
 import * as validate from "../middleware/validation.middleware.js";
 import passport from "passport";
 
@@ -8,12 +9,14 @@ const router = express.Router();
 
 router.post(
   "/signup-phone",
+  otpLimiter,
   validate.sendOtpValidator,
   authController.signUpWithPhone,
 );
 
 router.post(
   "/verify-phone-otp",
+  authLimiter,
   validate.verifyOtpValidator,
   authController.signUpVerifyOtp,
 );
@@ -24,15 +27,16 @@ router.post(
   authController.signUpWithEmail,
 );
 
-router.post("/login-phone", validate.login, authController.loginWithPhone);
+router.post("/login-phone", otpLimiter, validate.login, authController.loginWithPhone);
 
 router.post(
   "/verify-login-otp",
+  authLimiter,
   validate.loginWithOtpValidator,
   authController.loginVerifyOtp,
 );
 
-router.post("/resend-otp", authController.resendOtp);
+router.post("/resend-otp", otpLimiter, authController.resendOtp);
 
 // Route to initiate Google OAuth flow
 router.get('/google',

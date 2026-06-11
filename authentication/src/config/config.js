@@ -10,9 +10,8 @@ dotenvconfig();
 const REQUIRED_VARS = [
   "MONGO_URI",
   "JWT_SECRET",
-  "TWILIO_ACCOUNT_SID",
-  "TWILIO_AUTH_TOKEN",
-  "TWILIO_WHATSAPP_FROM",
+  "TWO_FACTOR_API_KEY",
+  "TWO_FACTOR_TEMPLATE",
   "GOOGLE_CLIENT_ID",
   "GOOGLE_CLIENT_SECRET",
   "REDIS_HOST",
@@ -33,9 +32,8 @@ if (missing.length > 0) {
 const _config = {
   MONGO_URI:             process.env.MONGO_URI,
   JWT_SECRET:            process.env.JWT_SECRET,
-  TWILIO_ACCOUNT_SID:    process.env.TWILIO_ACCOUNT_SID,
-  TWILIO_AUTH_TOKEN:     process.env.TWILIO_AUTH_TOKEN,
-  TWILIO_WHATSAPP_FROM:  process.env.TWILIO_WHATSAPP_FROM,
+  TWO_FACTOR_API_KEY:    process.env.TWO_FACTOR_API_KEY,
+  TWO_FACTOR_TEMPLATE:   process.env.TWO_FACTOR_TEMPLATE,
   GOOGLE_CLIENT_ID:      process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET:  process.env.GOOGLE_CLIENT_SECRET,
   REDIS_HOST:            process.env.REDIS_HOST,

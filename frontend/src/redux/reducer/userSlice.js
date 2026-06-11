@@ -4,12 +4,23 @@ import {
   verifySignupOtpApi,
   sendLoginOtpApi,
   verifyLoginOtpApi,
+  resendOtpApi,
   getMeApi,
   getUsersApi,
   getUserCountApi,
   deleteUserApi,
   blockUserApi,
 } from "../services/auth.services";
+
+const getApiErrorMessage = (error, fallback) => {
+  const data = error?.response?.data;
+  return (
+    data?.message ||
+    data?.errors?.[0]?.msg ||
+    error?.message ||
+    fallback
+  );
+};
 
 // ─────────────────────────────────────────────
 // AUTH THUNKS
@@ -22,7 +33,9 @@ export const sendSignupOtp = createAsyncThunk(
       const res = await sendSignupOtpApi(data);
       return { ...data, message: res.data.message };
     } catch (error) {
-      return thunkApi.rejectWithValue(error.response?.data?.message);
+      return thunkApi.rejectWithValue(
+        getApiErrorMessage(error, "Failed to send OTP"),
+      );
     }
   },
 );
@@ -34,7 +47,23 @@ export const verifySignupOtp = createAsyncThunk(
       const res = await verifySignupOtpApi({ phone, otp, password });
       return res.data;
     } catch (error) {
-      return thunkApi.rejectWithValue(error.response?.data?.message);
+      return thunkApi.rejectWithValue(
+        getApiErrorMessage(error, "OTP verification failed"),
+      );
+    }
+  },
+);
+
+export const resendOtp = createAsyncThunk(
+  "api/auth/resendOtp",
+  async ({ phone, type }, thunkApi) => {
+    try {
+      const res = await resendOtpApi({ phone, type });
+      return { phone, type, message: res.data.message };
+    } catch (error) {
+      return thunkApi.rejectWithValue(
+        getApiErrorMessage(error, "Failed to resend OTP"),
+      );
     }
   },
 );
@@ -47,7 +76,7 @@ export const sendLoginOtp = createAsyncThunk(
       return { phone, message: res.data.message };
     } catch (error) {
       return thunkApi.rejectWithValue(
-        error?.response?.data?.message || "Failed to send OTP",
+        getApiErrorMessage(error, "Failed to send OTP"),
       );
     }
   },
@@ -61,7 +90,7 @@ export const verifyLoginOtp = createAsyncThunk(
       return res.data;
     } catch (error) {
       return thunkApi.rejectWithValue(
-        error?.response?.data?.message || "OTP verification failed",
+        getApiErrorMessage(error, "OTP verification failed"),
       );
     }
   },
@@ -186,21 +215,62 @@ const authSlice = createSlice({
       })
 
       // verifySignupOtp
+      .addCase(verifySignupOtp.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(verifySignupOtp.fulfilled, (state, action) => {
+        state.loading = false;
         state.user = action.payload.user;
         state.step = "authenticated";
+      })
+      .addCase(verifySignupOtp.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // resendOtp
+      .addCase(resendOtp.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(resendOtp.fulfilled, (state, action) => {
+        state.loading = false;
+        state.tempPhone = action.payload.phone;
+      })
+      .addCase(resendOtp.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
 
       // sendLoginOtp
+      .addCase(sendLoginOtp.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(sendLoginOtp.fulfilled, (state, action) => {
+        state.loading = false;
         state.step = "loginOtpSent";
         state.tempPhone = action.payload.phone;
       })
+      .addCase(sendLoginOtp.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
 
       // verifyLoginOtp
+      .addCase(verifyLoginOtp.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(verifyLoginOtp.fulfilled, (state, action) => {
+        state.loading = false;
         state.user = action.payload.user;
         state.step = "authenticated";
+      })
+      .addCase(verifyLoginOtp.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
 
       // getMe

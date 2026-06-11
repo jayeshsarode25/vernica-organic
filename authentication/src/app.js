@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from "passport-google-oauth20"
 import config from './config/config.js';
-import { applySecurityMiddleware, authLimiter } from './middleware/Security.middleware.js'
+import { applySecurityMiddleware } from './middleware/Security.middleware.js'
 
 
 
@@ -52,7 +52,7 @@ app.get('/', (req, res) => {
 
 import authRoutes from './routes/user.route.js'
 import { globalErrorHandler } from './utils/error.utils.js';
-app.use('/api/auth',authLimiter, authRoutes)
+app.use('/api/auth', authRoutes)
 
 app.use(globalErrorHandler);
 

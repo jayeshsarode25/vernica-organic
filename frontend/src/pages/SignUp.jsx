@@ -1,14 +1,19 @@
-import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
-import { sendSignupOtp, verifySignupOtp } from "../redux/reducer/userSlice";
-import { useState } from "react";
+import {
+  clearError,
+  resetFlow,
+  resendOtp,
+  sendSignupOtp,
+  verifySignupOtp,
+} from "../redux/reducer/userSlice";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const SignUp = () => {
   const dispatch = useDispatch();
   const location = useLocation();
 
-  const { step, loading } = useSelector((state) => state.auth);
+  const { step, loading, error } = useSelector((state) => state.auth);
 
   const navigate = useNavigate();
 
@@ -20,12 +25,16 @@ const SignUp = () => {
     password: "",
   });
 
+  useEffect(() => {
+    dispatch(resetFlow());
+    dispatch(clearError());
+  }, [dispatch]);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const sendOtp = () => {
-    console.log("clicled");
     dispatch(
       sendSignupOtp({
         phone: form.phone,
@@ -33,12 +42,15 @@ const SignUp = () => {
         email: form.email,
       }),
     );
-    console.log("dispatch fired");
+  };
+
+  const handleResendOtp = () => {
+    dispatch(resendOtp({ phone: form.phone, type: "signup" }));
   };
 
   const verifyOtp = async () => {
     try {
-      dispatch(
+      const signupData = await dispatch(
         verifySignupOtp({
           phone: form.phone,
           otp: form.otp,
@@ -46,19 +58,18 @@ const SignUp = () => {
         }),
       ).unwrap();
 
-       const from = location.state?.from?.pathname;
+      const from = location.state?.from?.pathname;
 
-    if (from) {
-      navigate(from, { replace: true });
-    } else if (loginData.user.role === "admin") {
-      navigate("/admin/dashboard", { replace: true });
-    } else {
-      navigate("/", { replace: true });
+      if (from) {
+        navigate(from, { replace: true });
+      } else if (signupData.user?.role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    } catch (error) {
+      console.error("OTP verification failed:", error);
     }
-
-  } catch (error) {
-    console.error("OTP verification failed:", error);
-  }
   };
 
   return (
@@ -67,6 +78,12 @@ const SignUp = () => {
         <h1 className="text-2xl font-bold text-center mb-6">
           {step === "signupOtpSent" ? "Verify OTP" : "SignUp"}
         </h1>
+
+        {error && (
+          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
 
         {step === "idle" && (
           <>
@@ -177,6 +194,15 @@ const SignUp = () => {
             >
               Edit details
             </p>
+
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={loading}
+              className="mt-3 w-full text-sm font-medium text-green-700 hover:text-green-800 disabled:text-gray-400"
+            >
+              Resend OTP
+            </button>
           </>
         )}
       </div>

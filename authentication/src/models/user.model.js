@@ -64,11 +64,9 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
-    phoneOTP: {
+    twoFactorSessionId: {
       type: String,
-    },
-    phoneOTPExpiry: {
-      type: Date,
+      select: false,
     },
 
     otpLastSentAt: {

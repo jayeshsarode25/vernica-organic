@@ -3,7 +3,11 @@ import { body, validationResult } from "express-validator";
 const responseWithValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    const validationErrors = errors.array();
+    return res.status(400).json({
+      message: validationErrors[0]?.msg || "Validation failed",
+      errors: validationErrors,
+    });
   }
   next();
 };
@@ -42,6 +46,7 @@ export const verifyOtpValidator = [
 
 export const login = [
   body("phone").notEmpty().withMessage("Phone number is required"),
+  responseWithValidationErrors,
 ];
 
 export const loginWithOtpValidator = [

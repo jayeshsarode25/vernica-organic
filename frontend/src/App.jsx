@@ -1,7 +1,7 @@
 import MainRoutes from "./routes/MainRoutes";
 import Navbar from "./components/Navbar/Navbar";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getMe } from "./redux/reducer/userSlice";
 import { getCart } from "./redux/reducer/cartSlice";
 import RoleRedirect from "./routes/Roleredirect";
@@ -10,11 +10,22 @@ import VernikaChatbot from "./components/chatbot/VernikaChatbot";
 
 const App = () => {
   const dispatch = useDispatch();
-  const { user,loading } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
+  const [authChecked, setAuthChecked] = useState(false);
 
 
   useEffect(() => {
-    dispatch(getMe());
+    let isMounted = true;
+
+    dispatch(getMe()).finally(() => {
+      if (isMounted) {
+        setAuthChecked(true);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, [dispatch]);
 
   
@@ -24,7 +35,7 @@ const App = () => {
   }
 }, [user, dispatch]);
 
-  if (loading) return (
+  if (!authChecked) return (
   <div className="flex items-center justify-center h-screen text-sm text-gray-400">
     Loading...
   </div>

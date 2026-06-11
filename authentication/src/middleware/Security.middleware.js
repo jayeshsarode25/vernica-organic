@@ -17,10 +17,18 @@ export const generalLimiter = rateLimit({
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: Number(process.env.AUTH_RATE_LIMIT_MAX || 50),
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many login attempts, please try again later." },
+});
+
+export const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.OTP_RATE_LIMIT_MAX || 25),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many OTP requests, please try again later." },
 });
 
 export const paymentLimiter = rateLimit({
