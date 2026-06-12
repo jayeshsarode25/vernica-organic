@@ -1211,7 +1211,7 @@ export default function Footer() {
     <>
       <style>{`
         footer.organic-footer {
-          background: white;
+          background: #f4e8d6;
           color: #5a7a4a;
           position: relative;
           overflow: hidden;
@@ -1459,7 +1459,7 @@ export default function Footer() {
           {/* Video with floating leaves */}
           <div className="footer-video-wrap" ref={videoRef}>
             <video
-              src="./logoVideo.mp4"
+              src="./varnika logo video.mp4"
               autoPlay
               loop
               muted

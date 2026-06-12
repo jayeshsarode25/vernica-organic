@@ -38,7 +38,10 @@ const _config = {
   GOOGLE_CLIENT_SECRET:  process.env.GOOGLE_CLIENT_SECRET,
   REDIS_HOST:            process.env.REDIS_HOST,
   REDIS_PORT:            process.env.REDIS_PORT,
+  REDIS_USERNAME:        process.env.REDIS_USERNAME,
   REDIS_PASSWORD:        process.env.REDIS_PASSWORD,
+  REDIS_DB:              process.env.REDIS_DB,
+  REDIS_TLS:             process.env.REDIS_TLS,
   RABBITMQ_URI:          process.env.RABBITMQ_URI,
 };
 

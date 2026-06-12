@@ -1,9 +1,11 @@
 import _config from './src/config/config.js';
 import app from './src/app.js';
 import connectDB from './src/db/db.js';
+import { connectRedis } from './src/db/redis.js';
 
 
-connectDB();
+await connectDB();
+await connectRedis();
 
 
 
