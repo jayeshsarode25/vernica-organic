@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { lazy, Suspense, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   getAllBlogsAdmin,
@@ -10,8 +10,9 @@ import {
   clearError,
 } from '../../redux/reducer/Blogslice'
 import { Edit2, Trash2, Plus, Search, Eye, CheckCircle } from 'lucide-react'
-import BlogForm from '../../components/admin/BlogForm'
 import BlogCard from '../../components/admin/BlogCard'
+
+const BlogForm = lazy(() => import('../../components/admin/BlogForm'))
 
 const BlogManagement = () => {
   const dispatch = useDispatch()
@@ -144,13 +145,15 @@ const BlogManagement = () => {
 
       {/* Blog Form Modal */}
       {showForm && (
-        <BlogForm
-          blog={editingBlog}
-          categories={categories}
-          onSubmit={handleFormSubmit}
-          onClose={() => setShowForm(false)}
-          loading={loading}
-        />
+        <Suspense fallback={null}>
+          <BlogForm
+            blog={editingBlog}
+            categories={categories}
+            onSubmit={handleFormSubmit}
+            onClose={() => setShowForm(false)}
+            loading={loading}
+          />
+        </Suspense>
       )}
 
       {/* Main Content */}
@@ -244,6 +247,7 @@ const BlogManagement = () => {
                     <img
                       src={blog.thumbnail}
                       alt={blog.title}
+                      loading="lazy"
                       className="w-16 h-16 object-cover rounded"
                     />
                     <div className="flex-1">

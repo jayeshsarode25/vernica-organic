@@ -9,7 +9,6 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { io } from "socket.io-client";
 
 const CHAT_SOCKET_URL =
   import.meta.env.VITE_CHAT_SOCKET_URL || "http://localhost:5000";
@@ -147,80 +146,87 @@ const VernikaChatbot = () => {
   const sessionId = useMemo(() => getSessionId(), []);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!isOpen) {
       socketRef.current?.disconnect();
       socketRef.current = null;
       return undefined;
     }
 
-    const socket = io(CHAT_SOCKET_URL, {
-      withCredentials: true,
-      transports: ["polling", "websocket"],
-      reconnectionAttempts: 2,
-      timeout: 5000,
-    });
+    import("socket.io-client").then(({ io }) => {
+      if (cancelled) return;
 
-    socketRef.current = socket;
+      const socket = io(CHAT_SOCKET_URL, {
+        withCredentials: true,
+        transports: ["polling", "websocket"],
+        reconnectionAttempts: 2,
+        timeout: 5000,
+      });
 
-    socket.on("connect", () => {
-      hasShownConnectionErrorRef.current = false;
-    });
+      socketRef.current = socket;
 
-    socket.on("connect_error", () => {
-      setIsTyping(false);
+      socket.on("connect", () => {
+        hasShownConnectionErrorRef.current = false;
+      });
 
-      if (hasShownConnectionErrorRef.current) return;
-      hasShownConnectionErrorRef.current = true;
+      socket.on("connect_error", () => {
+        setIsTyping(false);
 
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        createMessage(
-          "bot",
-          "Vernika Beauty Assistant is offline right now. Please start the AI chat server and try again.",
-          "error",
-        ),
-      ]);
-    });
+        if (hasShownConnectionErrorRef.current) return;
+        hasShownConnectionErrorRef.current = true;
 
-    socket.on("bot_typing", (payload) => {
-      setIsTyping(Boolean(payload?.isTyping));
-    });
+        setMessages((currentMessages) => [
+          ...currentMessages,
+          createMessage(
+            "bot",
+            "Vernika Beauty Assistant is offline right now. Please start the AI chat server and try again.",
+            "error",
+          ),
+        ]);
+      });
 
-    socket.on("bot_reply", (payload) => {
-      if (!payload?.message) return;
+      socket.on("bot_typing", (payload) => {
+        setIsTyping(Boolean(payload?.isTyping));
+      });
 
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        createMessage("bot", payload.message),
-      ]);
-      setIsTyping(false);
-    });
+      socket.on("bot_reply", (payload) => {
+        if (!payload?.message) return;
 
-    socket.on("contact_info", (payload) => {
-      if (!payload?.inquiryNumber && !payload?.whatsappNumber) return;
+        setMessages((currentMessages) => [
+          ...currentMessages,
+          createMessage("bot", payload.message),
+        ]);
+        setIsTyping(false);
+      });
 
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        createContactCard(payload),
-      ]);
-    });
+      socket.on("contact_info", (payload) => {
+        if (!payload?.inquiryNumber && !payload?.whatsappNumber) return;
 
-    socket.on("chat_error", (error) => {
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        createMessage(
-          "bot",
-          error?.message ||
-            "Vernika Beauty Assistant is unavailable right now. Please try again shortly.",
-          "error",
-        ),
-      ]);
-      setIsTyping(false);
+        setMessages((currentMessages) => [
+          ...currentMessages,
+          createContactCard(payload),
+        ]);
+      });
+
+      socket.on("chat_error", (error) => {
+        setMessages((currentMessages) => [
+          ...currentMessages,
+          createMessage(
+            "bot",
+            error?.message ||
+              "Vernika Beauty Assistant is unavailable right now. Please try again shortly.",
+            "error",
+          ),
+        ]);
+        setIsTyping(false);
+      });
     });
 
     return () => {
-      socket.removeAllListeners();
-      socket.disconnect();
+      cancelled = true;
+      socketRef.current?.removeAllListeners();
+      socketRef.current?.disconnect();
       socketRef.current = null;
     };
   }, [isOpen]);
@@ -295,7 +301,7 @@ const VernikaChatbot = () => {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6">
+    <div className="fixed bottom-4 left-4 z-50 sm:bottom-6 sm:left-6">
       <AnimatePresence>
         {isOpen && (
           <MotionSection
@@ -304,7 +310,7 @@ const VernikaChatbot = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.96 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="fixed inset-x-3 bottom-20 flex h-[min(620px,calc(100vh-6.5rem))] flex-col overflow-hidden rounded-[26px] border border-[#F7C8D5] bg-[#FFF7F9] text-[#2B2B2B] shadow-2xl shadow-[#B76E79]/20 sm:inset-x-auto sm:right-6 sm:w-[390px]"
+            className="fixed inset-x-3 bottom-20 flex h-[min(620px,calc(100vh-6.5rem))] flex-col overflow-hidden rounded-[26px] border border-[#F7C8D5] bg-[#FFF7F9] text-[#2B2B2B] shadow-2xl shadow-[#B76E79]/20 sm:inset-x-auto sm:left-6 sm:w-[390px]"
           >
             <div className="flex items-center justify-between bg-[#E88BA5] px-5 py-4 text-white">
               <div className="flex min-w-0 items-center gap-3">
@@ -465,7 +471,7 @@ const VernikaChatbot = () => {
         onClick={() => setIsOpen((currentValue) => !currentValue)}
         whileHover={{ y: -2 }}
         whileTap={{ scale: 0.96 }}
-        className="flex h-16 w-16 items-center justify-center rounded-full bg-[#E88BA5] text-white shadow-xl shadow-[#B76E79]/30 transition hover:bg-[#B76E79] focus:outline-none focus:ring-4 focus:ring-[#F7C8D5]"
+        className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-white shadow-xl shadow-black/25 transition hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300"
         aria-label={isOpen ? "Close Vernika chat" : "Open Vernika chat"}
       >
         <AnimatePresence mode="wait" initial={false}>

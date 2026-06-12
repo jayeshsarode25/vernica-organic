@@ -9,6 +9,7 @@ const BlogCard = ({ blog, onEdit, onDelete }) => {
         <img
           src={blog.thumbnail}
           alt={blog.title}
+          loading="lazy"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
         />
         {/* Status Badge */}

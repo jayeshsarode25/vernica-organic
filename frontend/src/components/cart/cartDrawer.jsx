@@ -120,6 +120,7 @@ const CartDrawer = ({ open, setOpen }) => {
                   <img
                     src={item.productId.images?.[0]?.url}
                     alt={item.productId.title}
+                    loading="lazy"
                     className="w-16 h-16 object-cover rounded-lg"
                   />
 

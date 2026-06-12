@@ -1,7 +1,10 @@
 import axios from "axios";
 
+export const AUTH_API_BASE_URL =
+  import.meta.env.VITE_AUTH_API_URL || "http://localhost:3000/api/auth";
+
 export const authAPI = axios.create({
-  baseURL: "http://localhost:3000/api/auth",
+  baseURL: AUTH_API_BASE_URL,
   withCredentials: true,
 });
 
@@ -14,6 +17,7 @@ export const verifyLoginOtpApi = (phone, otp) =>
   authAPI.post("/verify-login-otp", { phone, otp });
 export const resendOtpApi = (data) => authAPI.post("/resend-otp", data);
 export const getMeApi = () => authAPI.get("/me");
+export const getGoogleOAuthUrl = () => `${AUTH_API_BASE_URL}/google`;
 
 
 export const getUsersApi = () => authAPI.get("/users");

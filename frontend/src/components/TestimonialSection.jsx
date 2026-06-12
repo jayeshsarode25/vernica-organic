@@ -198,6 +198,7 @@ function TestimonialCard({ testimonial }) {
         <img
           src={testimonial.avatar}
           alt={testimonial.author}
+          loading="lazy"
           className="w-12 h-12 rounded-full object-cover"
         />
         <div>

@@ -1,11 +1,16 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { lazy, Suspense, useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { featchProductById } from "../../redux/reducer/productSlice";
-import ProductInfoSection from "./ProductInfoSection";
-import TestimonialSection from "../TestimonialSection";
-import Footer from "../../pages/Footer";
 import { addToCart } from "../../redux/reducer/cartSlice";
+
+const ProductInfoSection = lazy(() => import("./ProductInfoSection"));
+const TestimonialSection = lazy(() => import("../TestimonialSection"));
+const Footer = lazy(() => import("../../pages/Footer"));
+
+const BelowFoldFallback = () => (
+  <div className="mx-auto my-8 h-32 max-w-3xl animate-pulse rounded-lg bg-gray-100" />
+);
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -18,8 +23,9 @@ const ProductDetail = () => {
   const videoRef = useRef(null);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     dispatch(featchProductById(id));
-  }, [id]);
+  }, [dispatch, id]);
 
   // ✅ Build gallery BEFORE the useEffect that uses activeItem
   const gallery = single
@@ -119,7 +125,12 @@ const ProductDetail = () => {
                     }`}
                   style={{ width: 72, height: 72 }}
                 >
-                  <img src={item.thumb} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={item.thumb}
+                    alt=""
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
                   {item.type === "video" && (
                     <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                       <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md">
@@ -232,9 +243,11 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      <ProductInfoSection product={single} />
-      <TestimonialSection />
-      <Footer />
+      <Suspense fallback={<BelowFoldFallback />}>
+        <ProductInfoSection product={single} />
+        <TestimonialSection />
+        <Footer />
+      </Suspense>
 
       <style>{`
         @keyframes fadeIn {

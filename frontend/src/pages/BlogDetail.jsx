@@ -190,6 +190,7 @@ const BlogDetail = () => {
                   <img
                     src={blog.thumbnail}
                     alt={blog.title}
+                    loading="lazy"
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
                   />
                   <div className="p-4">

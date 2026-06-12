@@ -1,319 +1,27 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  featchProducts,
-  createProduct,
-  updateProduct,
   deleteProduct,
+  featchProducts,
 } from "../../redux/reducer/productSlice";
 import { fetchCategories } from "../../redux/reducer/Categoryslice";
 
-/* ─────────────────────────────────────────────────────────────────
-   1. ProductModal  (must be above AdminProducts)
-───────────────────────────────────────────────────────────────── */
-const ProductModal = ({ onClose, existing }) => {
-  const dispatch = useDispatch();
-  const isEdit = Boolean(existing);
-
-  const { categories, subCategories } = useSelector((state) => state.categories);
-
-  const [form, setForm] = useState({
-    title:       existing?.title ?? "",
-    description: existing?.description ?? "",
-    amount:      existing?.price?.amount ?? "",
-    currency:    existing?.price?.currency ?? "INR",
-    stock:       existing?.stock ?? "",
-    categoryId:  existing?.categoryId?._id ?? existing?.categoryId ?? "",
-    subCategory: existing?.subCategory ?? "male",
-  });
-
-  const [images, setImages] = useState([]);
-  const [video,  setVideo]  = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState(null);
-
-  useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
-
-  const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!form.categoryId) {
-      setError("Please select a category");
-      return;
-    }
-
-    if (!form.subCategory) {
-      setError("Please select a sub-category");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      if (isEdit) {
-        const result = await dispatch(
-          updateProduct({
-            id: existing._id,
-            data: {
-              title:         form.title,
-              description:   form.description,
-              priceAmount:   Number(form.amount),
-              priceCurrency: form.currency,
-              stock:         Number(form.stock),
-              categoryId:    form.categoryId,
-              subCategory:   form.subCategory,
-            },
-          })
-        );
-        if (updateProduct.rejected.match(result))
-          throw new Error(result.payload?.message);
-      } else {
-        const fd = new FormData();
-        fd.append("title",         form.title);
-        fd.append("description",   form.description);
-        fd.append("priceAmount",   form.amount);
-        fd.append("priceCurrency", form.currency);
-        fd.append("stock",         form.stock);
-        fd.append("categoryId",    form.categoryId);
-        fd.append("subCategory",   form.subCategory);
-        images.forEach((img) => fd.append("imagesUrls", img));
-        if (video) fd.append("videoUrl", video);
-
-        const result = await dispatch(createProduct(fd));
-        if (createProduct.rejected.match(result))
-          throw new Error(result.payload?.message);
-      }
-      onClose();
-    } catch (err) {
-      setError(err?.message ?? "Something went wrong");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
-          <h2 className="text-base font-semibold text-gray-900">
-            {isEdit ? "Edit Product" : "Add Product"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl leading-none"
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
-              {error}
-            </p>
-          )}
-
-          {/* Title */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Title *
-            </label>
-            <input
-              required
-              value={form.title}
-              onChange={set("title")}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-              placeholder="e.g. Vitamin C Serum"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Description *
-            </label>
-            <textarea
-              required
-              rows={3}
-              value={form.description}
-              onChange={set("description")}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 resize-none"
-              placeholder="Product description..."
-            />
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Category *
-            </label>
-            <select
-              required
-              value={form.categoryId}
-              onChange={set("categoryId")}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-            >
-              <option value="">Select a category</option>
-              {Array.isArray(categories) &&
-                categories.map((cat) => (
-                  <option key={cat._id} value={cat._id}>
-                    {cat.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          {/* Sub-category */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Sub-category *
-            </label>
-            <select
-              required
-              value={form.subCategory}
-              onChange={set("subCategory")}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-            >
-              {Array.isArray(subCategories) &&
-                subCategories.map((sub) => (
-                  <option key={sub.slug} value={sub.slug}>
-                    {sub.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          {/* Price + Currency */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Price *
-              </label>
-              <input
-                required
-                type="number"
-                min="0"
-                value={form.amount}
-                onChange={set("amount")}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-                placeholder="799"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Currency
-              </label>
-              <select
-                value={form.currency}
-                onChange={set("currency")}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-              >
-                <option>INR</option>
-                <option>USD</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Stock */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Stock *
-            </label>
-            <input
-              required
-              type="number"
-              min="0"
-              value={form.stock}
-              onChange={set("stock")}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-              placeholder="10"
-            />
-          </div>
-
-          {/* Images + Video (create only) */}
-          {!isEdit && (
-            <>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Images (max 2)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) =>
-                    setImages(Array.from(e.target.files).slice(0, 2))
-                  }
-                  className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
-                />
-                {images.length > 0 && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    {images.length} image(s) selected
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Video (max 1)
-                </label>
-                <input
-                  type="file"
-                  accept="video/*"
-                  onChange={(e) => setVideo(e.target.files[0] ?? null)}
-                  className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-purple-50 file:text-purple-600 hover:file:bg-purple-100"
-                />
-                {video && (
-                  <p className="text-xs text-gray-400 mt-1">{video.name}</p>
-                )}
-              </div>
-            </>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-60"
-            >
-              {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Product"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
+const ProductModal = lazy(() => import("../../components/admin/ProductModal"));
 
 const AdminProducts = () => {
   const dispatch = useDispatch();
 
   const { list: products, loading, error } = useSelector(
-    (state) => state.products
+    (state) => state.products,
   );
   const { subCategories } = useSelector((state) => state.categories);
 
-  const [modal,      setModal]      = useState(null); // null | "add" | product object
+  const [modal, setModal] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     dispatch(featchProducts());
+    dispatch(fetchCategories());
   }, [dispatch]);
 
   const handleDelete = async (id) => {
@@ -323,31 +31,33 @@ const AdminProducts = () => {
     setDeletingId(null);
   };
 
-  if (loading)
+  if (loading) {
     return (
       <div className="text-sm text-gray-400 mt-10 text-center">
         Loading products...
       </div>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <div className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mt-4">
         {error}
       </div>
     );
+  }
 
   return (
     <div>
-      {/* Modal */}
       {modal && (
-        <ProductModal
-          existing={modal === "add" ? null : modal}
-          onClose={() => setModal(null)}
-        />
+        <Suspense fallback={null}>
+          <ProductModal
+            existing={modal === "add" ? null : modal}
+            onClose={() => setModal(null)}
+          />
+        </Suspense>
       )}
 
-      {/* Page header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Products</h1>
@@ -358,12 +68,12 @@ const AdminProducts = () => {
         <button
           onClick={() => setModal("add")}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          type="button"
         >
           <span className="text-lg leading-none">+</span> Add Product
         </button>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
@@ -402,26 +112,27 @@ const AdminProducts = () => {
             )}
 
             {products.map((product) => {
-              const isDeleting   = deletingId === product._id;
-              const firstImage   = product.images?.[0]?.url;
-              const categoryName = product.categoryId?.name ?? "—";
+              const isDeleting = deletingId === product._id;
+              const firstImage = product.images?.[0]?.url;
+              const categoryName = product.categoryId?.name ?? "-";
               const subCategoryName =
-                subCategories?.find((sub) => sub.slug === product.subCategory)?.name ??
+                subCategories?.find((sub) => sub.slug === product.subCategory)
+                  ?.name ??
                 product.subCategory ??
-                "—";
+                "-";
 
               return (
                 <tr
                   key={product._id}
                   className="hover:bg-gray-50 transition-colors"
                 >
-                  {/* Product */}
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       {firstImage ? (
                         <img
                           src={firstImage}
                           alt={product.title}
+                          loading="lazy"
                           className="w-10 h-10 rounded-lg object-cover border border-gray-100"
                         />
                       ) : (
@@ -440,27 +151,25 @@ const AdminProducts = () => {
                     </div>
                   </td>
 
-                  {/* Category */}
                   <td className="px-5 py-3.5">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
                       {categoryName}
                     </span>
                   </td>
 
-                  {/* Sub-category */}
                   <td className="px-5 py-3.5">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 capitalize">
                       {subCategoryName}
                     </span>
                   </td>
 
-                  {/* Price */}
                   <td className="px-5 py-3.5 text-gray-700 font-medium">
-                    {product.price?.currency === "INR" ? "₹" : product.price?.currency}{" "}
-                    {product.price?.amount ?? "—"}
+                    {product.price?.currency === "INR"
+                      ? "Rs."
+                      : product.price?.currency}{" "}
+                    {product.price?.amount ?? "-"}
                   </td>
 
-                  {/* Stock */}
                   <td className="px-5 py-3.5">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -475,21 +184,20 @@ const AdminProducts = () => {
                     </span>
                   </td>
 
-                  {/* Media */}
                   <td className="px-5 py-3.5 text-xs text-gray-400">
                     <span className="mr-3">
-                      🖼 {product.images?.length ?? 0} img
+                      {product.images?.length ?? 0} img
                     </span>
-                    <span>{product.video?.url ? "🎥 1 vid" : "—"}</span>
+                    <span>{product.video?.url ? "1 vid" : "-"}</span>
                   </td>
 
-                  {/* Actions */}
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         disabled={isDeleting}
                         onClick={() => setModal(product)}
                         className="px-3 py-1.5 rounded-lg text-xs font-medium border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                        type="button"
                       >
                         Edit
                       </button>
@@ -497,6 +205,7 @@ const AdminProducts = () => {
                         disabled={isDeleting}
                         onClick={() => handleDelete(product._id)}
                         className="px-3 py-1.5 rounded-lg text-xs font-medium border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                        type="button"
                       >
                         {isDeleting ? "..." : "Delete"}
                       </button>

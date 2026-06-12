@@ -112,6 +112,7 @@ const SearchBar = ({ close }) => {
               <img
                 src={product.images?.[0]?.url}
                 alt={product.title}
+                loading="lazy"
                 className="w-10 h-10 object-cover rounded-md flex-shrink-0 bg-gray-100"
               />
               <div className="flex-1 min-w-0">

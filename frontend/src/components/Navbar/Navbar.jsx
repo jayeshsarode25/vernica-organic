@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Logo from "./Logo";
 import { CircleUser, Search, ShoppingBag, Menu, X } from "lucide-react";
-import SearchBar from "../SearchBar";
-import CartDrawer from "../cart/cartDrawer";
 import CategoryDropdown from "../categories/CategoryDropdown";
+
+const SearchBar = lazy(() => import("../SearchBar"));
+const CartDrawer = lazy(() => import("../cart/cartDrawer"));
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -13,9 +14,10 @@ const Navbar = () => {
   const [cartOpen, setCartOpen] = useState(false);
 
   const boxRef = useRef();
+  const prevAddingLen = useRef(0);
 
   const { user } = useSelector((state) => state.auth);
-  const { items } = useSelector((state) => state.cart); 
+  const { items, addingIds = [] } = useSelector((state) => state.cart);
 
   const cartCount = items?.length || 0;
 
@@ -31,6 +33,16 @@ const Navbar = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    if (prevAddingLen.current > 0 && addingIds.length === 0) {
+      const timer = setTimeout(() => setCartOpen(true), 0);
+      prevAddingLen.current = addingIds.length;
+      return () => clearTimeout(timer);
+    }
+
+    prevAddingLen.current = addingIds.length;
+  }, [addingIds]);
 
   const navLinks = [
     { path: "/", label: "Home" },
@@ -82,7 +94,9 @@ const Navbar = () => {
 
                 {open && (
                   <div className="absolute right-0 top-14 bg-white border shadow-lg rounded-xl p-4 z-50">
-                    <SearchBar close={() => setOpen(false)} />
+                    <Suspense fallback={<div className="h-20 w-72 animate-pulse rounded-lg bg-gray-100" />}>
+                      <SearchBar close={() => setOpen(false)} />
+                    </Suspense>
                   </div>
                 )}
               </div>
@@ -188,7 +202,11 @@ const Navbar = () => {
         </div>
       </nav>
 
-      <CartDrawer open={cartOpen} setOpen={setCartOpen} />
+      {cartOpen && (
+        <Suspense fallback={null}>
+          <CartDrawer open={cartOpen} setOpen={setCartOpen} />
+        </Suspense>
+      )}
     </>
   );
 };

@@ -108,7 +108,7 @@ const requestGeminiReply = async ({ apiKey, model, message, history }) => {
 
   const responseBody = await response.json().catch(() => ({}));
 
-  if (!response.ok) {
+  if (!response.ok) { 
     const errorMessage =
       responseBody?.error?.message || "Gemini API request failed";
     const error = new Error(errorMessage);

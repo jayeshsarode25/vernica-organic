@@ -1,13 +1,22 @@
+import { lazy, Suspense } from "react";
 import ProductShow from "../components/products/ProductShow";
-import ProductShowcase from "../components/products/ProductShowcase";
-import TestimonialSection from "../components/TestimonialSection";
-import ProductSell from "../components/products/ProductSell";
-import DamiSell from "../components/products/DamiSell";
-import Footer from "./Footer";
 import HeaderBar from "../components/HeaderBar";
-import CategorySection from "../components/Categorysection";
 import ErrorBoundary from "../components/Errorboundary"; 
 
+const CategorySection = lazy(() => import("../components/Categorysection"));
+const ProductShowcase = lazy(() => import("../components/products/ProductShowcase"));
+const TestimonialSection = lazy(() => import("../components/TestimonialSection"));
+const ProductSell = lazy(() => import("../components/products/ProductSell"));
+const DamiSell = lazy(() => import("../components/products/DamiSell"));
+const Footer = lazy(() => import("./Footer"));
+
+const SectionFallback = () => (
+  <div className="mx-auto my-8 h-40 max-w-7xl animate-pulse rounded-lg bg-gray-100" />
+);
+
+const LazySection = ({ children }) => (
+  <Suspense fallback={<SectionFallback />}>{children}</Suspense>
+);
 
 const Home = () => {
   return (
@@ -29,7 +38,9 @@ const Home = () => {
         title="Categories failed to load"
         message="We couldn't load the categories. Please refresh the page."
       >
-        <CategorySection />
+        <LazySection>
+          <CategorySection />
+        </LazySection>
       </ErrorBoundary>
 
       {/* ProductShowcase — fetches products from Redux */}
@@ -37,12 +48,16 @@ const Home = () => {
         title="Products failed to load"
         message="We couldn't load the products. Please refresh the page."
       >
-        <ProductShowcase />
+        <LazySection>
+          <ProductShowcase />
+        </LazySection>
       </ErrorBoundary>
 
       {/* TestimonialSection — static, low risk */}
       <ErrorBoundary title="Testimonials failed to load">
-        <TestimonialSection />
+        <LazySection>
+          <TestimonialSection />
+        </LazySection>
       </ErrorBoundary>
 
       {/* ProductSell — fetches products */}
@@ -50,7 +65,9 @@ const Home = () => {
         title="Featured products failed to load"
         message="We couldn't load featured products. Please refresh the page."
       >
-        <ProductSell />
+        <LazySection>
+          <ProductSell />
+        </LazySection>
       </ErrorBoundary>
 
       {/* DamiSell — fetches products */}
@@ -58,12 +75,16 @@ const Home = () => {
         title="Deals section failed to load"
         message="We couldn't load deals. Please refresh the page."
       >
-        <DamiSell />
+        <LazySection>
+          <DamiSell />
+        </LazySection>
       </ErrorBoundary>
 
       {/* Footer — static, low risk */}
       <ErrorBoundary title="Footer failed to load">
-        <Footer />
+        <LazySection>
+          <Footer />
+        </LazySection>
       </ErrorBoundary>
 
     </div>

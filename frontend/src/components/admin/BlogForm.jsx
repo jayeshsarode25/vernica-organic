@@ -1,7 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import React, { lazy, Suspense, useState, useEffect } from 'react'
 import { X } from 'lucide-react'
-import ReactQuill from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css";
+
+const ReactQuill = lazy(() =>
+  Promise.all([
+    import("react-quill-new"),
+    import("react-quill-new/dist/quill.snow.css"),
+  ]).then(([module]) => ({ default: module.default })),
+);
 
 const BlogForm = ({ blog, categories, onSubmit, onClose, loading }) => {
   const [formData, setFormData] = useState({
@@ -211,25 +216,31 @@ const BlogForm = ({ blog, categories, onSubmit, onClose, loading }) => {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Blog Content *
             </label>
-            <ReactQuill
-              value={formData.content}
-              onChange={handleContentChange}
-              theme="snow"
-              placeholder="Write your blog content here..."
-              className={`bg-white rounded-lg border ${
-                errors.content ? 'border-red-500' : 'border-gray-300'
-              }`}
-              modules={{
-                toolbar: [
-                  [{ header: [1, 2, 3, false] }],
-                  ['bold', 'italic', 'underline', 'strike'],
-                  [{ list: 'ordered' }, { list: 'bullet' }],
-                  ['blockquote', 'code-block'],
-                  ['link', 'image'],
-                  ['clean'],
-                ],
-              }}
-            />
+            <Suspense
+              fallback={
+                <div className="h-56 animate-pulse rounded-lg border border-gray-200 bg-gray-50" />
+              }
+            >
+              <ReactQuill
+                value={formData.content}
+                onChange={handleContentChange}
+                theme="snow"
+                placeholder="Write your blog content here..."
+                className={`bg-white rounded-lg border ${
+                  errors.content ? 'border-red-500' : 'border-gray-300'
+                }`}
+                modules={{
+                  toolbar: [
+                    [{ header: [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    ['blockquote', 'code-block'],
+                    ['link', 'image'],
+                    ['clean'],
+                  ],
+                }}
+              />
+            </Suspense>
             {errors.content && <p className="text-red-600 text-sm mt-1">{errors.content}</p>}
           </div>
 
@@ -275,6 +286,7 @@ const BlogForm = ({ blog, categories, onSubmit, onClose, loading }) => {
               <img
                 src={formData.thumbnail}
                 alt="Thumbnail preview"
+                loading="lazy"
                 className="mt-2 w-32 h-32 object-cover rounded-lg"
               />
             )}

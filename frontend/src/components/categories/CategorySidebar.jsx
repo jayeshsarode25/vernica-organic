@@ -16,7 +16,7 @@ const CategorySidebar = ({
   }, [dispatch]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+    <div className="h-full bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
       <h2 className="text-base font-semibold text-gray-800 mb-4">
         Categories
       </h2>

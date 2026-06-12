@@ -160,6 +160,7 @@ const BlogPage = () => {
                         <img
                           src={blog.thumbnail}
                           alt={blog.title}
+                          loading="lazy"
                           className="w-full h-48 md:h-40 object-cover rounded-lg"
                         />
                       </div>

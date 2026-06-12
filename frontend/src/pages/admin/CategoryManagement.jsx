@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Plus, AlertCircle, CheckCircle } from 'lucide-react';
 import {
@@ -10,7 +10,8 @@ import {
   clearSuccess,
 } from '../../redux/reducer/Categoryslice';
 import CategoryCard from '../../components/categories/CategoryCard';
-import CategoryForm from '../../components/categories/CategoryForm';
+
+const CategoryForm = lazy(() => import('../../components/categories/CategoryForm'));
  
 const CategoryManagement = () => {
   const dispatch = useDispatch();
@@ -218,12 +219,14 @@ const CategoryManagement = () => {
  
       {/* Category Form Modal */}
       {isFormOpen && (
-        <CategoryForm
-          category={editingCategory}
-          onSubmit={handleSubmit}
-          onClose={handleCloseForm}
-          loading={loading}
-        />
+        <Suspense fallback={null}>
+          <CategoryForm
+            category={editingCategory}
+            onSubmit={handleSubmit}
+            onClose={handleCloseForm}
+            loading={loading}
+          />
+        </Suspense>
       )}
  
       {/* Delete Confirmation Modal */}

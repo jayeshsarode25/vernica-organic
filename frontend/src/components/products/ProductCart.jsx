@@ -34,6 +34,7 @@ const ProductCart = ({ product }) => {
         <img
           src={image || "/placeholder.png"}
           alt={product.title}
+          loading="lazy"
           className="w-full h-56 object-cover rounded-xl group-hover:scale-105 transition"
         />
       </Link>

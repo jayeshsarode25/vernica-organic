@@ -1,7 +1,6 @@
 import userModel from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { publishToQueue } from "../broker/rabbit.js";
 import { sendOtp, verifyOtp } from "../services/otp.service.js";
 import { AppError, catchAsync } from "../utils/error.utils.js";
 
@@ -104,13 +103,6 @@ export const signUpVerifyOtp = catchAsync(async (req, res) => {
     { expiresIn: "7d" },
   );
 
-  await publishToQueue("user_created", {
-    id: user._id,
-    phone: user.phone,
-    name: user.name,
-    email: user.email,
-  });
-
   issueAuthCookie(res, token);
 
   res.status(200).json({
@@ -152,12 +144,7 @@ export const signUpWithEmail = catchAsync(async (req, res) => {
     { expiresIn: "7d" },
   );
 
-  await publishToQueue("user_created", {
-    id: user._id,
-    phone: user.phone,
-    name: user.name,
-    email: user.email,
-  });
+
 
   issueAuthCookie(res, token, { secure: true });
 
@@ -313,15 +300,9 @@ export const googleOAuthCallback = catchAsync(async (req, res) => {
     });
   }
 
-  await publishToQueue("user_created", {
-    id: user._id,
-    phone: user.phone,
-    name: user.name,
-    email: user.email,
-  });
 
   const token = jwt.sign(
-    { id: user._id, role: user.role },
+    { userId: user._id, email: user.email, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: "2d" },
   );
@@ -332,16 +313,10 @@ export const googleOAuthCallback = catchAsync(async (req, res) => {
     secure: false,
   });
 
-  res.status(200).json({
-    message: isNewUser
-      ? "User registered successfully"
-      : "User logged in successfully",
-    user: {
-      id: user._id,
-      email: user.email,
-      name: user.name,
-    },
-  });
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  const redirectStatus = isNewUser ? "registered" : "logged-in";
+
+  res.redirect(`${frontendUrl}/auth/google/callback?status=${redirectStatus}`);
 });
 
 export const forgetPassword = catchAsync(async () => {

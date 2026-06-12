@@ -1,12 +1,12 @@
 import MainRoutes from "./routes/MainRoutes";
 import Navbar from "./components/Navbar/Navbar";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { getMe } from "./redux/reducer/userSlice";
 import { getCart } from "./redux/reducer/cartSlice";
 import RoleRedirect from "./routes/Roleredirect";
-import VernikaChatbot from "./components/chatbot/VernikaChatbot";
 
+const VernikaChatbot = lazy(() => import("./components/chatbot/VernikaChatbot"));
 
 const App = () => {
   const dispatch = useDispatch();
@@ -46,7 +46,9 @@ const App = () => {
       <RoleRedirect/>
       <Navbar />  
       <MainRoutes />
-      <VernikaChatbot />
+      <Suspense fallback={null}>
+        <VernikaChatbot />
+      </Suspense>
     </div>
   );
 };

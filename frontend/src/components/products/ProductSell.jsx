@@ -20,6 +20,7 @@ const ProductSell = () => {
               className="w-full h-full object-cover"
               src="https://i.pinimg.com/1200x/53/ee/ff/53eeff14b73ee7c47a436472108cd776.jpg"
               alt="Best Selling Products"
+              loading="lazy"
             />
 
             <div className="absolute inset-0 bg-linear-to-b from-black/40 via-transparent to-transparent" />
@@ -38,6 +39,7 @@ const ProductSell = () => {
             className="w-full h-full object-cover"
             src="https://i.pinimg.com/1200x/93/4c/cc/934ccc9fe09ab36629538fd1797a4aa4.jpg"
             alt="Featured Product"
+            loading="lazy"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent">
             <h1 className="absolute bottom-20 text-white left-5 text-2xl sm:text-3xl font-bold ">

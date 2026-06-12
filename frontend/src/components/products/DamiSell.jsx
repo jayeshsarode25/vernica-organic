@@ -67,6 +67,7 @@ export default function SellBanner() {
                 <img
                   src="https://i.pinimg.com/736x/ad/32/91/ad3291b7286356000fb9a5c233b18ae6.jpg"
                   alt="Rosehip Serum"
+                  loading="lazy"
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute top-2 left-2 bg-black text-white rounded-full w-11 h-11 flex flex-col items-center justify-center">
@@ -95,6 +96,7 @@ export default function SellBanner() {
             <img
               src="https://i.pinimg.com/736x/31/57/20/315720f1f3cd42cc53e0defed7a7339b.jpg"
               alt="Hero Product"
+              loading="lazy"
               className="w-full h-full object-cover object-top opacity-40"
             />
             <div className="absolute inset-x-0 bottom-0 h-3/5 bg-linear-to-t from-black via-black/70 to-transparent" />
