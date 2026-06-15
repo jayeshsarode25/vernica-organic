@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
-const BASE_URL = "http://localhost:3000/api/auth";
+const BASE_URL =
+  import.meta.env.VITE_AUTH_API_URL || "http://localhost:3000/api/auth";
 
 // ─── Async Thunks ────────────────────────────────────────────────────────────
 

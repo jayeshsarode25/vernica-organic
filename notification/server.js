@@ -10,6 +10,8 @@ connect()
     })
 
 
-app.listen(3005, () => {
-  console.log('Notification service is running on port 3002');
+const PORT = process.env.PORT || 3005;
+
+app.listen(PORT, () => {
+  console.log(`Notification service is running on port ${PORT}`);
 });

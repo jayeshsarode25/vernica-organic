@@ -31,13 +31,16 @@ const findUserByPhone = (formattedPhone, selectFields = "") => {
   return selectFields ? query.select(selectFields) : query;
 };
 
+const authCookieOptions = (options = {}) => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  ...options,
+});
+
 const issueAuthCookie = (res, token, options = {}) => {
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: false,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    ...options,
-  });
+  res.cookie("token", token, authCookieOptions(options));
 };
 
 export const signUpWithPhone = catchAsync(async (req, res) => {
@@ -146,7 +149,7 @@ export const signUpWithEmail = catchAsync(async (req, res) => {
 
 
 
-  issueAuthCookie(res, token, { secure: true });
+  issueAuthCookie(res, token);
 
   res.status(201).json({
     message: "User signed up successfully",
@@ -166,6 +169,7 @@ export const loginWithPhone = catchAsync(async (req, res) => {
   const user = await userModel.findOne({
     phone: phoneSuffixQuery(formattedPhone),
     isActive: true,
+    isBlocked: { $ne: true },
   });
 
   if (!user) {
@@ -307,11 +311,7 @@ export const googleOAuthCallback = catchAsync(async (req, res) => {
     { expiresIn: "2d" },
   );
 
-  res.cookie("token", token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: false,
-  });
+  res.cookie("token", token, authCookieOptions());
 
   const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
   const redirectStatus = isNewUser ? "registered" : "logged-in";
@@ -334,8 +334,8 @@ export const getMe = catchAsync(async (req, res) => {
 export const logout = catchAsync(async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: true,
-    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   });
 
   res.status(200).json({ message: "Logged out successfully" });
@@ -409,6 +409,7 @@ export const blockUser = catchAsync(async (req, res) => {
   }
 
   user.isBlocked = !user.isBlocked;
+  user.isActive = !user.isBlocked;
   await user.save();
 
   res.json({

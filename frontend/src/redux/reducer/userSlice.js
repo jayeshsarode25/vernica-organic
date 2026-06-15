@@ -100,7 +100,7 @@ export const getMe = createAsyncThunk("auth/getMe", async (_, thunkApi) => {
   try {
     const res = await getMeApi();
     return res.data;
-  } catch (error) {
+  } catch {
     return thunkApi.rejectWithValue("Not authenticated");
   }
 });

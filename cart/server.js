@@ -3,10 +3,11 @@ import app from './src/app.js';
 import connectDb from './src/db/db.js';
 
 
-connectDb();
+await connectDb();
 
 
+const PORT = process.env.PORT || 3003;
 
-app.listen(3003, ()=>{
-    console.log("Cart services running on port 3003")
+app.listen(PORT, ()=>{
+    console.log(`Cart services running on port ${PORT}`)
 })

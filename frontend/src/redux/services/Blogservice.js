@@ -1,8 +1,9 @@
 // src/services/blogService.js
 import axios from "axios";
+import { API_URLS } from "./apiConfig";
 
 const api = axios.create({
-  baseURL: "http://localhost:3002/api/blogs",
+  baseURL: API_URLS.blogs,
   withCredentials: true,
 });
 

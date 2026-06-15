@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { createOrder, clearOrderError } from "../../redux/reducer/orderSlice";
+import { clearCart } from "../../redux/reducer/cartSlice";
 import {
   fetchAddresses,
   addAddress,
@@ -166,6 +167,7 @@ export default function CheckoutPage() {
     useSelector((s) => s.profile);
 
   const [showAddForm, setShowAddForm] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("COD");
 
   useEffect(() => {
     if (!user) navigate("/login");
@@ -174,9 +176,14 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (success && currentOrder) {
       sessionStorage.setItem("current_order_id", currentOrder._id);
+      if (currentOrder.paymentMethod === "COD") {
+        dispatch(clearCart());
+        navigate(`/order/success/${currentOrder._id}`, { replace: true });
+        return;
+      }
       navigate("/checkout/payment", { replace: false });
     }
-  }, [success, currentOrder, navigate]);
+  }, [success, currentOrder, dispatch, navigate]);
 
   useEffect(() => {
     return () => dispatch(clearOrderError());
@@ -215,7 +222,7 @@ export default function CheckoutPage() {
       country: selectedAddress.country,
     };
 
-    dispatch(createOrder(shippingAddress));
+    dispatch(createOrder({ shippingAddress, paymentMethod }));
   };
 
   if (!cartItems || cartItems.length === 0) {
@@ -306,7 +313,7 @@ export default function CheckoutPage() {
           ) : !selectedAddress ? (
             "Select an address to continue"
           ) : (
-            "Continue to Payment →"
+            paymentMethod === "COD" ? "Place COD Order" : "Continue to Payment"
           )}
         </button>
 
@@ -360,6 +367,40 @@ export default function CheckoutPage() {
         )}
 
         {/* ✅ Show subtotal, discount, and final total separately */}
+        <div className="mb-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            Payment Method
+          </p>
+          <div className="space-y-2">
+            <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="COD"
+                checked={paymentMethod === "COD"}
+                onChange={() => setPaymentMethod("COD")}
+                className="accent-gray-900"
+              />
+              <span className="text-sm font-medium text-gray-800">
+                Cash on Delivery
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="ONLINE"
+                checked={paymentMethod === "ONLINE"}
+                onChange={() => setPaymentMethod("ONLINE")}
+                className="accent-gray-900"
+              />
+              <span className="text-sm font-medium text-gray-800">
+                Pay Online
+              </span>
+            </label>
+          </div>
+        </div>
+
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-gray-500">
             <span>Subtotal</span>

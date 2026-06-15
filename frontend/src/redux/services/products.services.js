@@ -1,7 +1,8 @@
 import axios from "axios";
+import { API_URLS } from "./apiConfig";
 
 const api = axios.create({
-  baseURL: "http://localhost:3002/api/products",
+  baseURL: API_URLS.products,
   withCredentials: true,
 });
 

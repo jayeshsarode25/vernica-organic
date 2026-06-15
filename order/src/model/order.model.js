@@ -16,8 +16,8 @@ const orderSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         required : true
     },
-    item : [{
-        product:{
+    items : [{
+        productId:{
             type: mongoose.Schema.Types.ObjectId,
             required : true
         },
@@ -40,7 +40,8 @@ const orderSchema = new mongoose.Schema({
     }],
     status:{
         type : String,
-        enum : ['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED','CONFIRMED'],
+        enum : ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED','CONFIRMED'],
+        default: 'PENDING',
     },
     totalPrice :{
         amount:{
@@ -52,6 +53,16 @@ const orderSchema = new mongoose.Schema({
             required : true,
             enum : ['INR', 'USD']
         }
+    },
+    paymentMethod: {
+        type: String,
+        enum: ['ONLINE', 'COD'],
+        default: 'ONLINE',
+    },
+    paymentStatus: {
+        type: String,
+        enum: ['PENDING', 'PAID', 'FAILED', 'COD_PENDING'],
+        default: 'PENDING',
     },
     shippingAddress :{
         type : addressSchema,

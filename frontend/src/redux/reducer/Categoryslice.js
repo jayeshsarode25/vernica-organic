@@ -15,7 +15,7 @@ const CACHE_DURATION = 5 * 60 * 1000;
 // ── fetchCategories — skips if data is fresh ───────────────────────
 export const fetchCategories = createAsyncThunk(
   'categories/fetchCategories',
-  async (_, { rejectWithValue, getState }) => {
+  async (_, { rejectWithValue }) => {
     try {
       const response = await fetchAllCategories();
       return response.data;

@@ -15,7 +15,7 @@ export const createPayment = catchAsync(async (req, res) => {
 
   // fetch order from order service
   const orderResponse = await axios.get(
-    `http://localhost:3004/api/orders/${orderId}`,
+    `${config.ORDER_API_URL}/${orderId}`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
 

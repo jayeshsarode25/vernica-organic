@@ -20,12 +20,15 @@ const DASHBOARD_CACHE    = 1 * 60 * 1000; // 1 min — admin dashboard
 
 export const createOrder = createAsyncThunk(
   "order/create",
-  async (shippingAddress, thunkApi) => {
+  async (payload, thunkApi) => {
     try {
       const { cart } = thunkApi.getState();
+      const shippingAddress = payload?.shippingAddress || payload;
+      const paymentMethod = payload?.paymentMethod || "ONLINE";
 
       const res = await createOrderApi({
         shippingAddress,
+        paymentMethod,
         discount: cart.discount,  
       });
       return res.data;

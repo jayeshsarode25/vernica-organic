@@ -37,7 +37,6 @@ const Dashboard = () => {
 
   const {
     count: userCount,
-    items: userItems,
     loading: userLoading,
   } = useSelector((s) => s.auth.users);
 
@@ -56,7 +55,6 @@ const Dashboard = () => {
     (s) => s.blogs
   );
 
-  const blockedCount = userItems.filter((u) => u.isBlocked).length;
   const totalOrders = orderDashboard?.totalOrders || 0;
   const totalRevenue = orderDashboard?.totalRevenue || 0;
   const categoryCount = categories?.length || 0; // ← ADD THIS

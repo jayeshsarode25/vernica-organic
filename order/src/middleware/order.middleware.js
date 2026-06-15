@@ -38,6 +38,10 @@ export const createOrderValidation = [
         .withMessage('Country must be a string')
         .notEmpty()
         .withMessage('Country is required'),
+    body('paymentMethod')
+        .optional()
+        .isIn(['ONLINE', 'COD'])
+        .withMessage('Payment method must be ONLINE or COD'),
     respondWithValidationErrors
 ]
 

@@ -3,9 +3,10 @@ import app from "./src/app.js";
 import connectDb from "./src/db/db.js";
 
 
-connectDb();
+await connectDb();
 
+const PORT = process.env.PORT || 3002;
 
-app.listen(3002, () =>{
-    console.log("product services running on port 3002")
+app.listen(PORT, () =>{
+    console.log(`product services running on port ${PORT}`)
 })

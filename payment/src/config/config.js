@@ -28,6 +28,7 @@ const _config = {
   RABBITMQ_URI:        process.env.RABBITMQ_URI,
   RAZORPAY_KEY_ID:     process.env.RAZORPAY_KEY_ID,
   RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
+  ORDER_API_URL:       process.env.ORDER_API_URL || "http://localhost:3004/api/orders",
 };
 
 export default _config;

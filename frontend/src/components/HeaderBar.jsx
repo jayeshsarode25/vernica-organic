@@ -38,7 +38,7 @@ export default function MovingOffersBar() {
           animation: scroll 30s linear infinite;
         }
 
-        .hover\:pause:hover {
+        .hover\\:pause:hover {
           animation-play-state: paused;
         }
       `}</style>

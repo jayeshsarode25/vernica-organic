@@ -1,12 +1,5 @@
-import React, { lazy, Suspense, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
-
-const ReactQuill = lazy(() =>
-  Promise.all([
-    import("react-quill-new"),
-    import("react-quill-new/dist/quill.snow.css"),
-  ]).then(([module]) => ({ default: module.default })),
-);
 
 const BlogForm = ({ blog, categories, onSubmit, onClose, loading }) => {
   const [formData, setFormData] = useState({
@@ -211,36 +204,22 @@ const BlogForm = ({ blog, categories, onSubmit, onClose, loading }) => {
             <p className="text-xs text-gray-500 mt-1">{formData.description.length}/500</p>
           </div>
 
-          {/* Content - Rich Editor */}
+          {/* Content */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Blog Content *
             </label>
-            <Suspense
-              fallback={
-                <div className="h-56 animate-pulse rounded-lg border border-gray-200 bg-gray-50" />
-              }
-            >
-              <ReactQuill
-                value={formData.content}
-                onChange={handleContentChange}
-                theme="snow"
-                placeholder="Write your blog content here..."
-                className={`bg-white rounded-lg border ${
-                  errors.content ? 'border-red-500' : 'border-gray-300'
-                }`}
-                modules={{
-                  toolbar: [
-                    [{ header: [1, 2, 3, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ list: 'ordered' }, { list: 'bullet' }],
-                    ['blockquote', 'code-block'],
-                    ['link', 'image'],
-                    ['clean'],
-                  ],
-                }}
-              />
-            </Suspense>
+            <textarea
+              value={formData.content}
+              onChange={(event) => handleContentChange(event.target.value)}
+              placeholder="Write your blog content here..."
+              rows={12}
+              className={`w-full px-4 py-3 rounded-lg border transition-colors resize-y ${
+                errors.content
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-gray-300 focus:ring-green-500'
+              } focus:ring-2 focus:outline-none`}
+            />
             {errors.content && <p className="text-red-600 text-sm mt-1">{errors.content}</p>}
           </div>
 

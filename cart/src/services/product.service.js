@@ -1,6 +1,7 @@
 import axios from "axios";
+import config from "../config/config.js";
 
-const PRODUCT_API = "http://localhost:3002/api/products";
+const PRODUCT_API = config.PRODUCT_API_URL;
 
 export const getProductById = async (productId) => {
   try {

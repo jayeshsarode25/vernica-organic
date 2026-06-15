@@ -21,6 +21,8 @@ const AdminProducts = lazy(() => import("../pages/admin/AdminProducts"));
 const Users = lazy(() => import("../pages/admin/Users"));
 const CheckoutPage = lazy(() => import("../pages/order/CheckoutPage"));
 const PaymentPage = lazy(() => import("../pages/order/PaymentPage"));
+const PaymentSuccess = lazy(() => import("../pages/order/PaymentSuccess"));
+const PaymentFailed = lazy(() => import("../pages/order/PaymentFailed"));
 const Orders = lazy(() => import("../pages/admin/Orders"));
 const CategoryManagement = lazy(() => import("../pages/admin/CategoryManagement"));
 const BlogManagement = lazy(() => import("../pages/admin/BlogManagement"));
@@ -121,6 +123,24 @@ const MainRoutes = () => {
               <ErrorBoundary message="Payment page failed to load. Please refresh.">
                 {withSuspense(<PaymentPage />)}
               </ErrorBoundary>
+            </AuthRoute>
+          }
+        />
+
+        <Route
+          path="/order/success/:orderId"
+          element={
+            <AuthRoute role="user">
+              {withSuspense(<PaymentSuccess />)}
+            </AuthRoute>
+          }
+        />
+
+        <Route
+          path="/order/failed"
+          element={
+            <AuthRoute role="user">
+              {withSuspense(<PaymentFailed />)}
             </AuthRoute>
           }
         />

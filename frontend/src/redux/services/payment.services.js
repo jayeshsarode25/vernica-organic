@@ -1,6 +1,7 @@
 import axios from "axios";
+import { API_URLS } from "./apiConfig";
 
-const BASE_URL = "http://localhost:3006/api/payments";
+const BASE_URL = API_URLS.payments;
 
 const paymentApi = axios.create({
   baseURL: BASE_URL,

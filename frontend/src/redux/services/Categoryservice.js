@@ -1,6 +1,7 @@
 import axios from "axios";
+import { API_URLS } from "./apiConfig";
 
-const BASE_URL = "http://localhost:3002/api/categories";
+const BASE_URL = API_URLS.categories;
 
 const categoryApi = axios.create({
   baseURL: BASE_URL,

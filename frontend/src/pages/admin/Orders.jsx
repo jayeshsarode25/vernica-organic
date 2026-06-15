@@ -447,6 +447,8 @@ const StatusBadge = ({ status }) => {
 
 // ========== ORDER DETAIL MODAL ==========
 const OrderDetailModal = ({ order, onClose, onStatusChange }) => {
+  const orderItems = order.items || order.item || [];
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -536,10 +538,10 @@ const OrderDetailModal = ({ order, onClose, onStatusChange }) => {
                 Shipping Address
               </p>
               <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 border border-gray-200">
-                <p>{order.shippingAddress.address}</p>
+                <p>{order.shippingAddress.street}</p>
                 <p>
                   {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
-                  {order.shippingAddress.postalCode}
+                  {order.shippingAddress.pincode}
                 </p>
                 <p>{order.shippingAddress.country}</p>
               </div>
@@ -547,27 +549,27 @@ const OrderDetailModal = ({ order, onClose, onStatusChange }) => {
           )}
 
           {/* Order Items */}
-          {order.item && order.item.length > 0 && (
+          {orderItems.length > 0 && (
             <div>
               <p className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">
                 Items
               </p>
               <div className="space-y-2">
-                {order.item.map((item, idx) => (
+                {orderItems.map((item, idx) => (
                   <div
                     key={idx}
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
                   >
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {item.product}
+                        {item.productId || item.product}
                       </p>
                       <p className="text-xs text-gray-600">
                         Qty: {item.quantity}
                       </p>
                     </div>
                     <p className="text-sm font-semibold text-gray-900">
-                      ${(item.price || 0).toFixed(2)}
+                      ${Number(item.price?.amount || item.price || 0).toFixed(2)}
                     </p>
                   </div>
                 ))}
@@ -598,7 +600,6 @@ const OrderDetailModal = ({ order, onClose, onStatusChange }) => {
 
 // ========== STATUS UPDATE MODAL ==========
 const StatusUpdateModal = ({
-  orderId,
   currentStatus,
   onStatusChange,
   onConfirm,

@@ -52,7 +52,7 @@ router.get('/google/callback',
 
 router.get("/me", createAuthMiddleware(["user","admin"]), authController.getMe);
 
-router.get("/logout", createAuthMiddleware(["user"]), authController.logout);
+router.get("/logout", createAuthMiddleware(["user", "admin"]), authController.logout);
 
 router.get("/count",createAuthMiddleware(["admin"]), authController.getUserCount);
 

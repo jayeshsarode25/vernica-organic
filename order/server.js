@@ -3,9 +3,11 @@ import app from "./src/app.js";
 import connetDb from "./src/db/db.js";
 
 
-connetDb();
+await connetDb();
 
 
-app.listen(3004,() =>{
-    console.log("your order service Running port 3004")
+const PORT = process.env.PORT || 3004;
+
+app.listen(PORT,() =>{
+    console.log(`your order service Running port ${PORT}`)
 })

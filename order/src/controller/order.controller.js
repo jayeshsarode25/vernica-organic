@@ -1,6 +1,7 @@
 import { validationResult } from "express-validator";
 import orderModel from "../model/order.model.js";
 import axios from "axios";
+import config from "../config/config.js";
 import { AppError, catchAsync } from "../utils/error.utils.js"; // ✅
 
 // ─────────────────────────────────────────────────────────────────
@@ -16,7 +17,7 @@ export const createOrder = catchAsync(async (req, res) => {
   const token = req.cookies?.token;
 
   // fetch cart
-  const cartResponse = await axios.get(`http://localhost:3003/api/cart/`, {
+  const cartResponse = await axios.get(`${config.CART_API_URL}/`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -31,7 +32,7 @@ export const createOrder = catchAsync(async (req, res) => {
     cart.items.map(async (item) => {
       const productId = item.productId?._id || item.productId;
       const productResponse = await axios.get(
-        `http://localhost:3002/api/products/${productId}`,
+        `${config.PRODUCT_API_URL}/${productId}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       return productResponse.data.data;
@@ -70,12 +71,15 @@ export const createOrder = catchAsync(async (req, res) => {
 
   const discount = Number(req.body.discount) || 0;
   const discountedTotal = Math.max(totalAmount - discount, 0);
+  const paymentMethod = req.body.paymentMethod === "COD" ? "COD" : "ONLINE";
 
   const order = await orderModel.create({
     user: userId,
     items: orderItems,
     status: "PENDING",
     totalPrice: { amount: discountedTotal, currency: "INR" },
+    paymentMethod,
+    paymentStatus: paymentMethod === "COD" ? "COD_PENDING" : "PENDING",
     shippingAddress: req.body.shippingAddress,
   });
 
@@ -115,7 +119,7 @@ export const getOrderById = catchAsync(async (req, res) => {
     throw new AppError("Order not found", 404);
   }
 
-  if (order.user.toString() !== userId) {
+  if (req.user.role !== "admin" && order.user.toString() !== userId) {
     throw new AppError("Forbidden", 403);
   }
 
@@ -195,8 +199,8 @@ export const getOrderDashboard = catchAsync(async (req, res) => {
       ]),
 
       orderModel.aggregate([
-        { $unwind: "$item" },
-        { $group: { _id: "$item.product", sold: { $sum: "$item.quantity" } } },
+        { $unwind: "$items" },
+        { $group: { _id: "$items.productId", sold: { $sum: "$items.quantity" } } },
         { $sort: { sold: -1 } },
         { $limit: 5 },
       ]),
@@ -269,28 +273,13 @@ export const getAllOrders = catchAsync(async (req, res) => {
     if (endDate) filter.createdAt.$lte = new Date(endDate);
   }
 
-  if (search) {
-    const users = await userModel
-      .find({
-        $or: [
-          { name: { $regex: search, $options: "i" } },
-          { email: { $regex: search, $options: "i" } },
-        ],
-      })
-      .select("_id")
-      .lean();
-
-    const userIds = users.map((u) => u._id);
-
-    filter.$or = /^[0-9a-fA-F]{24}$/.test(search)
-      ? [{ user: { $in: userIds } }, { _id: search }]
-      : [{ user: { $in: userIds } }];
+  if (search && /^[0-9a-fA-F]{24}$/.test(search)) {
+    filter.$or = [{ _id: search }, { user: search }];
   }
 
   const [orders, totalOrders] = await Promise.all([
     orderModel
       .find(filter)
-      .populate("user", "name email phone")
       .sort({ createdAt: sort === "asc" ? 1 : -1 })
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum)

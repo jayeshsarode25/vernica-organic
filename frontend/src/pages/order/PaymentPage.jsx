@@ -45,21 +45,6 @@ export default function PaymentPage() {
     };
   }, [dispatch]);
 
-  useEffect(() => {
-    if (!user) {
-      navigate("/login", { replace: true });
-      return;
-    }
-    if (!orderId) {
-      navigate("/checkout", { replace: true });
-      return;
-    }
-    if (hasOpenedRef.current) return;
-
-    hasOpenedRef.current = true;
-    openRazorpay();
-  }, [user, orderId, navigate]);
-
   const handleDismiss = () => {
     if (!isMountedRef.current) return;
     dispatch(resetPayment());
@@ -100,7 +85,7 @@ export default function PaymentPage() {
     });
   };
 
-  const openRazorpay = async () => {
+  async function openRazorpay() {
     if (!isMountedRef.current) return;
 
     const loaded = await loadRazorpayScript();
@@ -150,7 +135,22 @@ export default function PaymentPage() {
       handlePaymentFailed(response);
     });
     rzp.open();
-  };
+  }
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login", { replace: true });
+      return;
+    }
+    if (!orderId) {
+      navigate("/checkout", { replace: true });
+      return;
+    }
+    if (hasOpenedRef.current) return;
+
+    hasOpenedRef.current = true;
+    openRazorpay();
+  }, [user, orderId, navigate]);
 
   const isLoading = status === "initiating" || status === "verifying";
 

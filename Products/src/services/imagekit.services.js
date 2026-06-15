@@ -1,18 +1,35 @@
-import ImageKit from "imagekit";
 import config from "../config/config.js";
-import { v4 as uuidv4 } from "uuid";
 
-const imageKit = new ImageKit({
-  publicKey: config.IMAGEKIT_PUBLIC_KEY,
-  privateKey: config.IMAGEKIT_PRIVATE_KEY,
-  urlEndpoint: config.IMAGEKIT_URL,
-});
+const IMAGEKIT_UPLOAD_URL = "https://upload.imagekit.io/api/v1/files/upload";
 
+const uploadToImageKit = async (fields) => {
+  const formData = new FormData();
+
+  Object.entries(fields).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) formData.append(key, value);
+  });
+
+  const response = await fetch(IMAGEKIT_UPLOAD_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${config.IMAGEKIT_PRIVATE_KEY}:`).toString("base64")}`,
+    },
+    body: formData,
+  });
+
+  const body = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(body.message || "ImageKit upload failed");
+  }
+
+  return body;
+};
 
 async function uploadImage({ buffer, folder = '/Varnika-products' }) {
-    const res = await imageKit.upload({
-        file: buffer,
-        fileName: uuidv4(),
+    const res = await uploadToImageKit({
+        file: new Blob([buffer]),
+        fileName: crypto.randomUUID(),
         folder,
     });
     return {
@@ -25,11 +42,11 @@ async function uploadImage({ buffer, folder = '/Varnika-products' }) {
 async function uploadVideo({buffer,originalname, folder = '/varnika-videos'}){
     const ext = originalname?.split(".").pop() || "mp4";
 
-    const res = await imageKit.upload({
-        file: buffer,
-        fileName: `${uuidv4()}.${ext}`,
+    const res = await uploadToImageKit({
+        file: new Blob([buffer]),
+        fileName: `${crypto.randomUUID()}.${ext}`,
         folder,
-        useUniqueFileName: false
+        useUniqueFileName: "false"
     });
     return{
         url: res.url,
@@ -39,4 +56,4 @@ async function uploadVideo({buffer,originalname, folder = '/varnika-videos'}){
 }
 
 
-export {imageKit,uploadImage, uploadVideo};
+export { uploadImage, uploadVideo };
