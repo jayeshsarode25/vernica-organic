@@ -38,6 +38,10 @@ redis.on("reconnecting", () => {
 export const connectRedis = async () => {
   if (redis.status === "ready") return redis;
 
+  if (redis.status === "wait") {
+    await redis.connect();
+  }
+
   await redis.ping();
   return redis;
 };

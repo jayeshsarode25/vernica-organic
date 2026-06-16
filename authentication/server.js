@@ -1,10 +1,16 @@
 import _config from './src/config/config.js';
 import app from './src/app.js';
 import connectDB from './src/db/db.js';
-// import { connectRedis } from './src/db/redis.js';
+import { connectRedis } from './src/db/redis.js';
 
 await connectDB();
-// await connectRedis();
+
+try {
+  await connectRedis();
+  console.log("Redis connected");
+} catch (error) {
+  console.error("Redis failed:", error.message);
+}
 
 const PORT = process.env.PORT || 3000;
 
