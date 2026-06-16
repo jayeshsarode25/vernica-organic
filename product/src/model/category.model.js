@@ -30,18 +30,19 @@ const categorySchema = new mongoose.Schema(
           name: {
             type: String,
             required: true,
-            enum: ["Male", "Female"],
+            enum: ["Male", "Female", "Unisex"],
           },
           slug: {
             type: String,
             required: true,
-            enum: ["male", "female"],
+            enum: ["male", "female", "unisex"],
           },
         },
       ],
       default: [
         { name: "Male", slug: "male" },
         { name: "Female", slug: "female" },
+        { name: "Unisex", slug: "unisex" },
       ],
     },
     isActive: {

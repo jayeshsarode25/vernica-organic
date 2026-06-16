@@ -4,6 +4,51 @@ import axios from "axios";
 import config from "../config/config.js";
 import { AppError, catchAsync } from "../utils/error.utils.js"; // ✅
 
+const fetchProductsByIds = async (productIds, token) => {
+  const uniqueIds = [...new Set(productIds.filter(Boolean).map((id) => id.toString()))];
+
+  const results = await Promise.allSettled(
+    uniqueIds.map(async (productId) => {
+      const response = await axios.get(`${config.PRODUCT_API_URL}/${productId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      return response.data.data;
+    }),
+  );
+
+  return results.reduce((map, result) => {
+    if (result.status === "fulfilled" && result.value?._id) {
+      map[result.value._id.toString()] = result.value;
+    }
+    return map;
+  }, {});
+};
+
+const attachProductDetails = async (orders, token) => {
+  const orderList = Array.isArray(orders) ? orders : [orders];
+  const productIds = orderList.flatMap((order) =>
+    (order.items || []).map((item) => item.productId?._id || item.productId),
+  );
+  const productsById = await fetchProductsByIds(productIds, token);
+
+  const enrichedOrders = orderList.map((order) => ({
+    ...order,
+    items: (order.items || []).map((item) => {
+      const productId = item.productId?._id || item.productId;
+      const product = productsById[productId?.toString()];
+      return product
+        ? {
+            ...item,
+            productId: product,
+            product,
+            productName: product.title,
+          }
+        : item;
+    }),
+  }));
+
+  return Array.isArray(orders) ? enrichedOrders : enrichedOrders[0];
+};
 // ─────────────────────────────────────────────────────────────────
 // CREATE ORDER
 // ─────────────────────────────────────────────────────────────────
@@ -83,7 +128,9 @@ export const createOrder = catchAsync(async (req, res) => {
     shippingAddress: req.body.shippingAddress,
   });
 
-  res.status(201).json({ message: "Order created successfully", order });
+  const enrichedOrder = await attachProductDetails(order.toObject(), token);
+
+  res.status(201).json({ message: "Order created successfully", order: enrichedOrder });
 });
 
 // ─────────────────────────────────────────────────────────────────
@@ -91,17 +138,19 @@ export const createOrder = catchAsync(async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 export const getMyOrder = catchAsync(async (req, res) => {
   const userId = req.user.userId;
+  const token = req.cookies?.token || req.headers?.authorization?.split(" ")[1];
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
   const [order, totalOrder] = await Promise.all([
-    orderModel.find({ user: userId }).skip(skip).limit(limit).exec(),
+    orderModel.find({ user: userId }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
     orderModel.countDocuments({ user: userId }),
   ]);
+  const enrichedOrders = await attachProductDetails(order, token);
 
   res.status(200).json({
-    order,
+    order: enrichedOrders,
     meta: { total: totalOrder, page, limit },
   });
 });
@@ -112,8 +161,9 @@ export const getMyOrder = catchAsync(async (req, res) => {
 export const getOrderById = catchAsync(async (req, res) => {
   const userId = req.user.userId;
   const orderId = req.params.id;
+  const token = req.cookies?.token || req.headers?.authorization?.split(" ")[1];
 
-  const order = await orderModel.findById(orderId);
+  const order = await orderModel.findById(orderId).lean();
 
   if (!order) {
     throw new AppError("Order not found", 404);
@@ -123,7 +173,9 @@ export const getOrderById = catchAsync(async (req, res) => {
     throw new AppError("Forbidden", 403);
   }
 
-  res.status(200).json({ order });
+  const enrichedOrder = await attachProductDetails(order, token);
+
+  res.status(200).json({ order: enrichedOrder });
 });
 
 // ─────────────────────────────────────────────────────────────────

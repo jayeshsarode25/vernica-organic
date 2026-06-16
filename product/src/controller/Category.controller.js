@@ -6,14 +6,18 @@ import { AppError, catchAsync } from "../utils/error.utils.js";
 const DEFAULT_SUB_CATEGORIES = [
   { name: "Male", slug: "male" },
   { name: "Female", slug: "female" },
+  { name: "Unisex", slug: "unisex" },
 ];
 
 const withDefaultSubCategories = (category) => ({
   ...category,
-  subCategories:
-    Array.isArray(category.subCategories) && category.subCategories.length
-      ? category.subCategories
-      : DEFAULT_SUB_CATEGORIES,
+  subCategories: [
+    ...DEFAULT_SUB_CATEGORIES,
+    ...(Array.isArray(category.subCategories) ? category.subCategories : []),
+  ].filter(
+    (subCategory, index, subCategories) =>
+      index === subCategories.findIndex((item) => item.slug === subCategory.slug)
+  ),
 });
 
 const generateSlug = (name) =>

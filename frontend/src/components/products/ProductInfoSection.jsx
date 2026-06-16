@@ -1,39 +1,31 @@
 const ProductInfoSection = ({ product }) => {
-  const benefits = [
-    "Removes dead skin cells & impurities",
-    "Evens out skin tone & reduces dullness",
-    "Hydrates & nourishes for a soft, smooth texture",
-    "Soothes and calms sensitive skin",
-    "Promotes a radiant, refreshed complexion",
-  ];
+  const detailSections = [
+    { title: "Benefits", content: product?.productDetails?.benefits },
+    { title: "How to use", content: product?.productDetails?.howToUse },
+    { title: "Ingredients", content: product?.productDetails?.ingredients },
+    { title: "Warning and caution", content: product?.productDetails?.warningCaution },
+  ].filter((section) => section.content?.trim());
 
-  const howToUse =
-    "Apply to a clean face using a cotton pad, avoiding eye area. Use once daily or as directed. Follow with moisturizer and sunscreen during the day.";
+  if (detailSections.length === 0) return null;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-12 text-center">
-      <h1 className="text-3xl font-semibold text-pink-700 mb-6">
-        {product.title}
-      </h1>
-
-      <h2 className="font-semibold text-lg mb-2">Description:</h2>
-      <p className="text-gray-700 mb-8 leading-relaxed">
-        {product.description}
-      </p>
-
-      <h2 className="font-semibold text-lg mb-4">Benefits:</h2>
-      <ul className="space-y-3 mb-10">
-        {benefits.map((item, i) => (
-          <li key={i} className="flex items-center justify-center gap-2">
-            <span className="w-2 h-2 bg-black rounded-full"></span>
-            <span>{item}</span>
-          </li>
+    <section className="max-w-3xl mx-auto px-6 pb-12">
+      <div className="divide-y divide-gray-100 border-y border-gray-100">
+        {detailSections.map((section) => (
+          <details key={section.title} className="group">
+            <summary className="flex cursor-pointer list-none items-center justify-between py-4 text-sm font-semibold text-gray-900">
+              {section.title}
+              <span className="text-xl font-light text-gray-400 transition-transform group-open:rotate-45">
+                +
+              </span>
+            </summary>
+            <p className="pb-4 text-sm leading-6 text-gray-500 whitespace-pre-line">
+              {section.content}
+            </p>
+          </details>
         ))}
-      </ul>
-
-      <h2 className="font-semibold text-lg mb-2 text-pink-700">How to Use:</h2>
-      <p className="text-gray-700 leading-relaxed">{howToUse}</p>
-    </div>
+      </div>
+    </section>
   );
 };
 

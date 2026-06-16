@@ -145,8 +145,13 @@ const AdminProducts = () => {
                           {product.title}
                         </p>
                         <p className="text-xs text-gray-400 line-clamp-1">
-                          {product.description}
+                          {product.tagline || product.description}
                         </p>
+                        {product.size && (
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            Size: {product.size}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </td>

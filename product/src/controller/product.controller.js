@@ -15,11 +15,33 @@ const buildSortObj = (sort) => {
 const normalizeSubCategory = (value) =>
   typeof value === "string" ? value.trim().toLowerCase() : value;
 
+const VALID_SUB_CATEGORIES = ["male", "female", "unisex"];
+
 const assertValidSubCategory = (subCategory) => {
-  if (!["male", "female"].includes(subCategory)) {
-    throw new AppError("Sub-category must be male or female", 400);
+  if (!VALID_SUB_CATEGORIES.includes(subCategory)) {
+    throw new AppError("Sub-category must be male, female, or unisex", 400);
   }
 };
+
+const buildProductDetails = (body, includeEmpty = false) => {
+  const detailMap = {
+    benefits: body.benefits ?? body.productDetails?.benefits,
+    howToUse: body.howToUse ?? body.productDetails?.howToUse,
+    ingredients: body.ingredients ?? body.productDetails?.ingredients,
+    warningCaution:
+      body.warningCaution ??
+      body.warningAndCaution ??
+      body.productDetails?.warningCaution ??
+      body.productDetails?.warningAndCaution,
+  };
+
+  return Object.fromEntries(
+    Object.entries(detailMap).filter(([, value]) => includeEmpty || value !== undefined)
+  );
+};
+
+const getExistingProductDetails = (product) =>
+  product.productDetails?.toObject?.() ?? product.productDetails ?? {};
 
 // ─────────────────────────────────────────────────────────────────
 // CREATE PRODUCT
@@ -27,13 +49,15 @@ const assertValidSubCategory = (subCategory) => {
 export const createProduct = catchAsync(async (req, res) => {
   const {
     title,
+    tagline = "",
     description,
     priceAmount,
     priceCurrency = "INR",
     categoryId,
-    subCategory = "male",
+    subCategory = "unisex",
     rating = 0,
     stock  = 0,
+    size = "",
   } = req.body;
 
   const normalizedSubCategory = normalizeSubCategory(subCategory);
@@ -78,9 +102,10 @@ export const createProduct = catchAsync(async (req, res) => {
   }
 
   const product = await productModel.create({
-    title, description, price,
+    title, tagline, description, price,
     images: imageUrls, video: videoUrl,
-    categoryId, subCategory: normalizedSubCategory, rating, stock,
+    categoryId, subCategory: normalizedSubCategory, rating, stock, size,
+    productDetails: buildProductDetails(req.body, true),
   });
 
   // update category product count
@@ -112,6 +137,7 @@ export const updateProduct = catchAsync(async (req, res) => {
 
   const allowUpdates = [
     "title",
+    "tagline",
     "description",
     "price",
     "priceAmount",
@@ -120,6 +146,13 @@ export const updateProduct = catchAsync(async (req, res) => {
     "subCategory",
     "rating",
     "stock",
+    "size",
+    "productDetails",
+    "benefits",
+    "howToUse",
+    "ingredients",
+    "warningCaution",
+    "warningAndCaution",
     "isActive",
   ];
 
@@ -151,6 +184,16 @@ export const updateProduct = catchAsync(async (req, res) => {
       const normalizedSubCategory = normalizeSubCategory(req.body.subCategory);
       assertValidSubCategory(normalizedSubCategory);
       product.subCategory = normalizedSubCategory;
+    } else if (key === "productDetails" && typeof req.body.productDetails === "object") {
+      product.productDetails = {
+        ...getExistingProductDetails(product),
+        ...buildProductDetails(req.body),
+      };
+    } else if (["benefits", "howToUse", "ingredients", "warningCaution", "warningAndCaution"].includes(key)) {
+      product.productDetails = {
+        ...getExistingProductDetails(product),
+        ...buildProductDetails(req.body),
+      };
     } else {
       product[key] = req.body[key];
     }

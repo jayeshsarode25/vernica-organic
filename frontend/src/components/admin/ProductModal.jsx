@@ -14,12 +14,18 @@ const ProductModal = ({ onClose, existing }) => {
 
   const [form, setForm] = useState({
     title: existing?.title ?? "",
+    tagline: existing?.tagline ?? "",
     description: existing?.description ?? "",
     amount: existing?.price?.amount ?? "",
     currency: existing?.price?.currency ?? "INR",
     stock: existing?.stock ?? "",
+    size: existing?.size ?? "",
     categoryId: existing?.categoryId?._id ?? existing?.categoryId ?? "",
-    subCategory: existing?.subCategory ?? "male",
+    subCategory: existing?.subCategory ?? "unisex",
+    benefits: existing?.productDetails?.benefits ?? "",
+    howToUse: existing?.productDetails?.howToUse ?? "",
+    ingredients: existing?.productDetails?.ingredients ?? "",
+    warningCaution: existing?.productDetails?.warningCaution ?? "",
   });
 
   const [images, setImages] = useState([]);
@@ -35,9 +41,49 @@ const ProductModal = ({ onClose, existing }) => {
     setForm((previous) => ({ ...previous, [key]: event.target.value }));
   };
 
+  const buildProductPayload = () => ({
+    title: form.title.trim(),
+    tagline: form.tagline.trim(),
+    description: form.description.trim(),
+    priceAmount: Number(form.amount),
+    priceCurrency: form.currency,
+    stock: Number(form.stock),
+    size: form.size.trim(),
+    categoryId: form.categoryId,
+    subCategory: form.subCategory,
+    benefits: form.benefits.trim(),
+    howToUse: form.howToUse.trim(),
+    ingredients: form.ingredients.trim(),
+    warningCaution: form.warningCaution.trim(),
+  });
+
+  const buildProductFormData = () => {
+    const payload = buildProductPayload();
+    const formData = new FormData();
+
+    Object.entries(payload).forEach(([key, value]) => {
+      formData.append(key, String(value));
+    });
+
+    images.forEach((image) => formData.append("imagesUrls", image));
+    if (video) formData.append("videoUrl", video);
+
+    return formData;
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError(null);
+
+    if (!form.title.trim()) {
+      setError("Please enter a product title");
+      return;
+    }
+
+    if (!form.description.trim()) {
+      setError("Please enter a product description");
+      return;
+    }
 
     if (!form.categoryId) {
       setError("Please select a category");
@@ -49,21 +95,25 @@ const ProductModal = ({ onClose, existing }) => {
       return;
     }
 
+    const priceAmount = Number(form.amount);
+    if (!Number.isFinite(priceAmount) || priceAmount <= 0) {
+      setError("Price must be greater than 0");
+      return;
+    }
+
+    const stock = Number(form.stock);
+    if (!Number.isInteger(stock) || stock < 0) {
+      setError("Stock must be a whole number 0 or greater");
+      return;
+    }
+
     setSaving(true);
     try {
       if (isEdit) {
         const result = await dispatch(
           updateProduct({
             id: existing._id,
-            data: {
-              title: form.title,
-              description: form.description,
-              priceAmount: Number(form.amount),
-              priceCurrency: form.currency,
-              stock: Number(form.stock),
-              categoryId: form.categoryId,
-              subCategory: form.subCategory,
-            },
+            data: buildProductPayload(),
           }),
         );
 
@@ -71,18 +121,7 @@ const ProductModal = ({ onClose, existing }) => {
           throw new Error(result.payload?.message);
         }
       } else {
-        const formData = new FormData();
-        formData.append("title", form.title);
-        formData.append("description", form.description);
-        formData.append("priceAmount", form.amount);
-        formData.append("priceCurrency", form.currency);
-        formData.append("stock", form.stock);
-        formData.append("categoryId", form.categoryId);
-        formData.append("subCategory", form.subCategory);
-        images.forEach((image) => formData.append("imagesUrls", image));
-        if (video) formData.append("videoUrl", video);
-
-        const result = await dispatch(createProduct(formData));
+        const result = await dispatch(createProduct(buildProductFormData()));
         if (createProduct.rejected.match(result)) {
           throw new Error(result.payload?.message);
         }
@@ -98,7 +137,7 @@ const ProductModal = ({ onClose, existing }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
           <h2 className="text-base font-semibold text-gray-900">
             {isEdit ? "Edit Product" : "Add Product"}
@@ -129,6 +168,18 @@ const ProductModal = ({ onClose, existing }) => {
               onChange={set("title")}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
               placeholder="e.g. Vitamin C Serum"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Tagline
+            </label>
+            <input
+              value={form.tagline}
+              onChange={set("tagline")}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+              placeholder="e.g. Glow naturally, every day"
             />
           </div>
 
@@ -185,8 +236,8 @@ const ProductModal = ({ onClose, existing }) => {
             </select>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2">
+          <div className="grid sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-gray-600 mb-1">
                 Price *
               </label>
@@ -215,19 +266,87 @@ const ProductModal = ({ onClose, existing }) => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Stock *
-            </label>
-            <input
-              required
-              type="number"
-              min="0"
-              value={form.stock}
-              onChange={set("stock")}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-              placeholder="10"
-            />
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Size
+              </label>
+              <input
+                value={form.size}
+                onChange={set("size")}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+                placeholder="e.g. 100 ml"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Stock *
+              </label>
+              <input
+                required
+                type="number"
+                min="0"
+                value={form.stock}
+                onChange={set("stock")}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+                placeholder="10"
+              />
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Benefits
+              </label>
+              <textarea
+                rows={4}
+                value={form.benefits}
+                onChange={set("benefits")}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 resize-none"
+                placeholder="Key benefits..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                How to use
+              </label>
+              <textarea
+                rows={4}
+                value={form.howToUse}
+                onChange={set("howToUse")}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 resize-none"
+                placeholder="Usage directions..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Ingredients
+              </label>
+              <textarea
+                rows={4}
+                value={form.ingredients}
+                onChange={set("ingredients")}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 resize-none"
+                placeholder="Ingredients list..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Warning and caution
+              </label>
+              <textarea
+                rows={4}
+                value={form.warningCaution}
+                onChange={set("warningCaution")}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 resize-none"
+                placeholder="Warnings or cautions..."
+              />
+            </div>
           </div>
 
           {!isEdit && (

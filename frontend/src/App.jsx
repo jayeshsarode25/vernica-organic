@@ -2,6 +2,7 @@ import MainRoutes from "./routes/MainRoutes";
 import Navbar from "./components/Navbar/Navbar";
 import { useDispatch, useSelector } from "react-redux";
 import { lazy, Suspense, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { getMe } from "./redux/reducer/userSlice";
 import { getCart } from "./redux/reducer/cartSlice";
 import RoleRedirect from "./routes/Roleredirect";
@@ -10,8 +11,10 @@ const VernikaChatbot = lazy(() => import("./components/chatbot/VernikaChatbot"))
 
 const App = () => {
   const dispatch = useDispatch();
+  const location = useLocation();
   const { user } = useSelector((state) => state.auth);
   const [authChecked, setAuthChecked] = useState(false);
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
 
   useEffect(() => {
@@ -44,11 +47,13 @@ const App = () => {
   return (
     <div className="bg-white min-h-screen w-full text-black">
       <RoleRedirect/>
-      <Navbar />  
+      {!isAdminRoute && <Navbar />}
       <MainRoutes />
-      <Suspense fallback={null}>
-        <VernikaChatbot />
-      </Suspense>
+      {!isAdminRoute && (
+        <Suspense fallback={null}>
+          <VernikaChatbot />
+        </Suspense>
+      )}
     </div>
   );
 };

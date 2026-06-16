@@ -5,13 +5,17 @@ const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   
   if (!errors.isEmpty()) {
+    const formattedErrors = errors.array().map((err) => ({
+      field: err.path ?? err.param ?? err.location,
+      message: err.msg,
+    }));
+
     return res.status(400).json({
       success: false,
-      message: "Validation error",
-      errors: errors.array().map((err) => ({
-        field: err.param,
-        message: err.msg,
-      })),
+      message: `Validation error: ${formattedErrors
+        .map((err) => `${err.field}: ${err.message}`)
+        .join(", ")}`,
+      errors: formattedErrors,
     });
   }
   
@@ -25,13 +29,21 @@ const createProductValidators = [
     .notEmpty()
     .withMessage("title is required"),
 
+  body("tagline")
+    .optional()
+    .isString()
+    .withMessage("tagline must be a string")
+    .trim()
+    .isLength({ max: 160 })
+    .withMessage("tagline max length is 160 characters"),
+
   body("description")
     .optional()
     .isString()
     .withMessage("description must be a string")
     .trim()
-    .isLength({ max: 500 })
-    .withMessage("description max length is 500 characters"),
+    .isLength({ max: 2000 })
+    .withMessage("description max length is 2000 characters"),
 
   body("priceAmount")
     .notEmpty()
@@ -66,8 +78,35 @@ const createProductValidators = [
     .optional()
     .trim()
     .toLowerCase()
-    .isIn(["male", "female"])
-    .withMessage("subCategory must be male or female"),
+    .isIn(["male", "female", "unisex"])
+    .withMessage("subCategory must be male, female, or unisex"),
+
+  body("size")
+    .optional()
+    .isString()
+    .withMessage("size must be a string")
+    .trim()
+    .isLength({ max: 80 })
+    .withMessage("size max length is 80 characters"),
+
+  body([
+    "benefits",
+    "howToUse",
+    "ingredients",
+    "warningCaution",
+    "warningAndCaution",
+    "productDetails.benefits",
+    "productDetails.howToUse",
+    "productDetails.ingredients",
+    "productDetails.warningCaution",
+    "productDetails.warningAndCaution",
+  ])
+    .optional()
+    .isString()
+    .withMessage("product detail fields must be strings")
+    .trim()
+    .isLength({ max: 2000 })
+    .withMessage("product detail fields max length is 2000 characters"),
 
   body("rating")
     .optional()
@@ -90,13 +129,21 @@ const updateProductValidators = [
     .notEmpty()
     .withMessage("title cannot be empty"),
 
+  body("tagline")
+    .optional()
+    .isString()
+    .withMessage("tagline must be a string")
+    .trim()
+    .isLength({ max: 160 })
+    .withMessage("tagline max length is 160 characters"),
+
   body("description")
     .optional()
     .isString()
     .withMessage("description must be a string")
     .trim()
-    .isLength({ max: 500 })
-    .withMessage("description max length is 500 characters"),
+    .isLength({ max: 2000 })
+    .withMessage("description max length is 2000 characters"),
 
   body("priceAmount")
     .optional()
@@ -127,8 +174,35 @@ const updateProductValidators = [
     .optional()
     .trim()
     .toLowerCase()
-    .isIn(["male", "female"])
-    .withMessage("subCategory must be male or female"),
+    .isIn(["male", "female", "unisex"])
+    .withMessage("subCategory must be male, female, or unisex"),
+
+  body("size")
+    .optional()
+    .isString()
+    .withMessage("size must be a string")
+    .trim()
+    .isLength({ max: 80 })
+    .withMessage("size max length is 80 characters"),
+
+  body([
+    "benefits",
+    "howToUse",
+    "ingredients",
+    "warningCaution",
+    "warningAndCaution",
+    "productDetails.benefits",
+    "productDetails.howToUse",
+    "productDetails.ingredients",
+    "productDetails.warningCaution",
+    "productDetails.warningAndCaution",
+  ])
+    .optional()
+    .isString()
+    .withMessage("product detail fields must be strings")
+    .trim()
+    .isLength({ max: 2000 })
+    .withMessage("product detail fields max length is 2000 characters"),
 
   body("rating")
     .optional()

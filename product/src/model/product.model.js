@@ -5,6 +5,10 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  tagline: {
+    type: String,
+    trim: true,
+  },
   description: {
     type: String,
   },
@@ -35,6 +39,28 @@ const productSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  size: {
+    type: String,
+    trim: true,
+  },
+  productDetails: {
+    benefits: {
+      type: String,
+      trim: true,
+    },
+    howToUse: {
+      type: String,
+      trim: true,
+    },
+    ingredients: {
+      type: String,
+      trim: true,
+    },
+    warningCaution: {
+      type: String,
+      trim: true,
+    },
+  },
   // ⭐ NEW: Category Reference
   categoryId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -43,8 +69,8 @@ const productSchema = new mongoose.Schema({
   },
   subCategory: {
     type: String,
-    enum: ["male", "female"],
-    default: "male",
+    enum: ["male", "female", "unisex"],
+    default: "unisex",
     lowercase: true,
     trim: true,
   },
@@ -65,7 +91,7 @@ const productSchema = new mongoose.Schema({
   },
 });
 
-productSchema.index({ title: "text", description: "text" });
+productSchema.index({ title: "text", tagline: "text", description: "text" });
 productSchema.index({ categoryId: 1 }); // Index for category queries
 productSchema.index({ categoryId: 1, subCategory: 1 });
 productSchema.index({ isActive: 1 }); // Index for active products

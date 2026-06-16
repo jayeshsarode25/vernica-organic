@@ -328,7 +328,13 @@ export const resetPassword = catchAsync(async () => {
 });
 
 export const getMe = catchAsync(async (req, res) => {
-  res.status(200).json({ user: req.user });
+  const user = await userModel.findById(req.user.id).select("-password");
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  res.status(200).json({ user });
 });
 
 export const logout = catchAsync(async (req, res) => {

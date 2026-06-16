@@ -115,6 +115,7 @@ const initialState = {
   subCategories:    [
     { name: 'Male', slug: 'male' },
     { name: 'Female', slug: 'female' },
+    { name: 'Unisex', slug: 'unisex' },
   ],
   selectedCategory: null,
   loading:          false,

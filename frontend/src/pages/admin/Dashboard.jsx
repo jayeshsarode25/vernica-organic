@@ -8,18 +8,18 @@ import { getAllBlogsAdmin } from "../../redux/reducer/Blogslice"; // ← ADD THI
 import { Link } from "react-router-dom";
 
 const StatCard = ({ label, value, loading, iconBg, icon }) => (
-  <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center gap-5">
+  <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center gap-5 overflow-hidden">
     <div
       className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}
     >
       {icon}
     </div>
-    <div>
+    <div className="min-w-0 flex-1">
       <p className="text-sm text-gray-500">{label}</p>
       {loading ? (
         <div className="h-7 w-16 bg-gray-100 rounded animate-pulse mt-1" />
       ) : (
-        <p className="text-2xl font-semibold text-gray-900 mt-0.5">
+        <p className="text-xl 2xl:text-2xl font-semibold text-gray-900 mt-0.5 break-words leading-tight">
           {value ?? "—"}
         </p>
       )}
@@ -57,6 +57,7 @@ const Dashboard = () => {
 
   const totalOrders = orderDashboard?.totalOrders || 0;
   const totalRevenue = orderDashboard?.totalRevenue || 0;
+  const formattedRevenue = `Rs. ${Number(totalRevenue).toLocaleString("en-IN")}`;
   const categoryCount = categories?.length || 0; // ← ADD THIS
   const blogCount = blogs?.length || 0; // ← ADD THIS
 
@@ -75,7 +76,7 @@ const Dashboard = () => {
       <p className="text-sm text-gray-500 mb-8">Welcome back, Admin</p>
 
       {/* ← UPDATED: Changed from 5 columns to 6 columns for blogs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-5">
         <StatCard
           label="Total Users"
           value={userCount}
@@ -153,7 +154,7 @@ const Dashboard = () => {
         />
         <StatCard
           label="Total Revenue"
-          value={`$${totalRevenue.toFixed(2)}`}
+          value={formattedRevenue}
           loading={orderLoading}
           iconBg="bg-yellow-50"
           icon={
@@ -169,7 +170,7 @@ const Dashboard = () => {
       <div className="mt-8">
         <p className="text-sm font-medium text-gray-700 mb-3">Quick actions</p>
         {/* ← UPDATED: Changed from 5 columns to 6 columns for blogs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3">
           <Link
             to="/admin/dashboard"
             className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-5 py-4 hover:border-blue-300 hover:bg-blue-50 transition-colors group"

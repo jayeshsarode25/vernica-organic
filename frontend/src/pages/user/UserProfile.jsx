@@ -12,11 +12,47 @@ import {
 import { getMyOrders } from "../../redux/reducer/orderSlice";
 
 const STATUS = {
-  Delivered: { pill: "bg-green-50 text-green-700 border border-green-200",   dot: "bg-green-400" },
-  Shipped:   { pill: "bg-blue-50 text-blue-700 border border-blue-200",      dot: "bg-blue-400"  },
-  Cancelled: { pill: "bg-red-50 text-red-600 border border-red-200",         dot: "bg-red-400"   },
-  Pending:   { pill: "bg-amber-50 text-amber-700 border border-amber-200",   dot: "bg-amber-400" },
+  DELIVERED:  { pill: "bg-green-50 text-green-700 border border-green-200", dot: "bg-green-400" },
+  SHIPPED:    { pill: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-400" },
+  CANCELLED:  { pill: "bg-red-50 text-red-600 border border-red-200", dot: "bg-red-400" },
+  PENDING:    { pill: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-400" },
+  PROCESSING: { pill: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-400" },
+  CONFIRMED:  { pill: "bg-green-50 text-green-700 border border-green-200", dot: "bg-green-400" },
 };
+
+const formatMoney = (value, currency = "INR") => {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "Rs. -";
+  const prefix = currency === "USD" ? "USD" : "Rs.";
+  return `${prefix} ${amount.toLocaleString("en-IN")}`;
+};
+
+const getOrderTotal = (order) =>
+  order.totalPrice?.amount ?? order.totalAmount ?? order.total ?? 0;
+
+const getOrderCurrency = (order) =>
+  order.totalPrice?.currency ?? order.currency ?? "INR";
+
+const getOrderItemName = (item) =>
+  item.product?.title ??
+  item.productId?.title ??
+  item.productName ??
+  item.title ??
+  "Product";
+
+const getOrderItemPrice = (item) =>
+  item.price?.amount ??
+  item.totalPrice?.amount ??
+  item.product?.price?.amount ??
+  item.productId?.price?.amount ??
+  0;
+
+const getOrderItemCurrency = (item) =>
+  item.price?.currency ??
+  item.totalPrice?.currency ??
+  item.product?.price?.currency ??
+  item.productId?.price?.currency ??
+  "INR";
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 function Toast() {
@@ -160,36 +196,63 @@ function AddressCard({ addr }) {
 
 // ─── Order Row ────────────────────────────────────────────────────────────────
 function OrderRow({ order }) {
-  const s = STATUS[order.status] ?? STATUS.Pending;
+  const status = String(order.status ?? "PENDING").toUpperCase();
+  const s = STATUS[status] ?? STATUS.PENDING;
 
   const date = order.createdAt
     ? new Date(order.createdAt).toLocaleDateString("en-IN", {
         day: "2-digit", month: "short", year: "numeric",
       })
-    : "—";
+    : "-";
 
-  const itemCount = Array.isArray(order.items) ? order.items.length : 0;
-  const total     = order.totalAmount ?? order.total ?? "—";
+  const orderItems = Array.isArray(order.items) ? order.items : [];
+  const itemCount = orderItems.length;
+  const total = getOrderTotal(order);
+  const currency = getOrderCurrency(order);
 
   return (
-    <div className="flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-xl px-5 py-4 hover:border-gray-300 hover:shadow-sm transition-all">
-      <div className="flex flex-col gap-1">
-        <span className="font-mono text-sm font-semibold text-gray-900 tracking-wide">
-          #{order._id?.slice(-6).toUpperCase()}
-        </span>
-        <span className="text-xs text-gray-400">
-          {date} · {itemCount} item{itemCount !== 1 ? "s" : ""}
-        </span>
+    <div className="bg-white border border-gray-200 rounded-xl px-5 py-4 hover:border-gray-300 hover:shadow-sm transition-all">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <span className="font-mono text-sm font-semibold text-gray-900 tracking-wide">
+            #{order._id?.slice(-6).toUpperCase()}
+          </span>
+          <span className="text-xs text-gray-400">
+            {date} - {itemCount} item{itemCount !== 1 ? "s" : ""}
+          </span>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <span className="text-sm font-bold text-green-500">
+            {formatMoney(total, currency)}
+          </span>
+          <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${s.pill}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{status}
+          </span>
+        </div>
       </div>
-      <div className="flex items-center gap-3 shrink-0">
-        {/* ✅ mint green used as highlight on the price */}
-        <span className="text-sm font-bold text-green-500">
-          {typeof total === "number" ? `₹${total.toLocaleString("en-IN")}` : `₹${total}`}
-        </span>
-        <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${s.pill}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{order.status}
-        </span>
-      </div>
+
+      {orderItems.length > 0 && (
+        <div className="mt-4 divide-y divide-gray-100 border-t border-gray-100 pt-2">
+          {orderItems.map((item, index) => (
+            <div
+              key={item._id ?? item.productId?._id ?? index}
+              className="flex items-center justify-between gap-4 py-2.5"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">
+                  {getOrderItemName(item)}
+                </p>
+                <p className="text-xs text-gray-400">
+                  Qty: {item.quantity ?? item.qty ?? 1}
+                </p>
+              </div>
+              <span className="shrink-0 text-sm font-semibold text-gray-900">
+                {formatMoney(getOrderItemPrice(item), getOrderItemCurrency(item))}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -204,7 +267,7 @@ export default function UserProfile() {
   const ordersLoading = useSelector((s) => s.order.loading);
 
   // ✅ Name only — never phone as display name
-  const displayName = user?.name || "User";
+  const displayName = user?.name || user?.username || user?.fullName || user?.displayName || "User";
   const initials = displayName
     .split(" ")
     .map((w) => w[0])
