@@ -17,7 +17,6 @@ const REQUIRED_VARS = [
   "REDIS_HOST",
   "REDIS_PORT",
   "REDIS_PASSWORD",
-  "RABBITMQ_URI",
 ];
 
 const missing = REQUIRED_VARS.filter((key) => !process.env[key]);
@@ -42,7 +41,6 @@ const _config = {
   REDIS_PASSWORD:        process.env.REDIS_PASSWORD,
   REDIS_DB:              process.env.REDIS_DB,
   REDIS_TLS:             process.env.REDIS_TLS,
-  RABBITMQ_URI:          process.env.RABBITMQ_URI,
 };
 
 export default _config;
