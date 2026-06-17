@@ -49,6 +49,9 @@ passport.use(new GoogleStrategy({
 }));
 
 
+app.get("/api/auth/health", (req, res) => {
+  res.json({ message: "Auth API is working" });
+});
 
 app.get('/', (req, res) => {
     res.status(200).json({
